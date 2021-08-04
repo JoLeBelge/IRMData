@@ -1,5 +1,5 @@
 #include <iostream>
-#include <netcdfcpp.h>
+//#include <netcdfcpp.h>
 
 #include <sqlite3.h>
 #include "irmdata.h"
@@ -19,8 +19,8 @@ std::string pathOut("/home/lisein/Documents/Scolyte/Data/climat/IRM/irmCarte/");
 
 // pour extraire une bande netcdf au format raster ; gdal_translate -ot Int16 NETCDF:qq_ens_mean_0.1deg_reg_2011-2020_v22.0e.nc -b 1 -unscale "t1_01.tif"
 
-std::vector<int> timesForOneMonth(year_month ym, NcVar *timeVar, int nrec);
-int timeFromYMD(year_month_day ymd, NcVar *timeVar, int nrec);
+//std::vector<int> timesForOneMonth(year_month ym, NcVar *timeVar, int nrec);
+//int timeFromYMD(year_month_day ymd, NcVar *timeVar, int nrec);
 void projectRaster(std::string inPath, std::string outPath);
 
 void projectRasterCallgdal(std::string inPath, std::string outPath);
@@ -30,7 +30,7 @@ void exportCarteUneDate(year_month_day ymd, std::string varAccro="qq");
 
 void calculDJPourDate();
 void exportCarteDJUneDate(year_month_day ymd);
-std::vector<int> timesForDateForDJ(year_month_day ymd, NcVar *timeVar, int nrec);
+//std::vector<int> timesForDateForDJ(year_month_day ymd, NcVar *timeVar, int nrec);
 
 year_month_day ymdFromString(std::string date);
 
@@ -110,7 +110,7 @@ main(int argc, char *argv[])
          */
         // calcul carte mensuelle
         case 1:{
-            calculCarteMensuel();
+            //calculCarteMensuel();
             break;
         }
 
@@ -128,8 +128,8 @@ main(int argc, char *argv[])
                 year_month_day ymd(year{y},month{m},day{d});
                 std::cout << "date " << ymd << std::endl;
                 if (vm.count("accro")) {
-                    exportCarteUneDate(ymd,vm["accro"].as<std::string>());} else {
-                    exportCarteUneDate(ymd);
+                    //exportCarteUneDate(ymd,vm["accro"].as<std::string>());} else {
+                    //exportCarteUneDate(ymd);
                 }
             } else {
                 std::cout << " argument date obligatoire " << std::endl;
@@ -138,7 +138,7 @@ main(int argc, char *argv[])
         }
         case 3:{
             std::cout << " calculDJPourDate()" << std::endl;
-            calculDJPourDate();
+           // calculDJPourDate();
             break;
         }
             /*
@@ -175,6 +175,7 @@ main(int argc, char *argv[])
     return 0;
 }
 
+/*
 int calculCarteMensuel(){
     //std::vector<std::string> accro{"qq", "tn", "tx", "pp", "rr", "tg"};
     // pp c'est la pression qui est de 1000 par jour donc somme par mois est de 30000 et ça fonctionne pas
@@ -371,7 +372,7 @@ int calculCarteMensuel(){
                     GDALClose(pMensuelRaster);
 
                     projectRasterCallgdal(output2,output3);
-                    /*
+
             // je projecte le raster mensuel:
             GDALDatasetH hSrcDS  = GDALOpenEx( out2, GDAL_OF_VECTOR | GDAL_OF_READONLY, NULL, NULL, NULL );
             //GDALDataset  * DS = (GDALDataset *) GDALOpen( out2, GA_ReadOnly );
@@ -413,7 +414,7 @@ int calculCarteMensuel(){
             }else{
                 std::cout << "no valid option for gdal translate" << std::endl;
             }
-            GDALVectorTranslateOptionsFree(option);*/
+            GDALVectorTranslateOptionsFree(option);
 
                     // GDALClose(hSrcDS);
 
@@ -554,10 +555,10 @@ void projectRaster(std::string inPath, std::string outPath){
     oSRS.exportToWkt( &pszDstWKT );
     std::cout << " pszDstWKT " << pszDstWKT << std::endl;
 
-    /*pszSrcWKT = GDALGetProjectionRef( hSrcDS );
-    CPLAssert( pszSrcWKT != NULL && strlen(pszSrcWKT) > 0 );
-    std::cout << " pszDstWKT " << pszSrcWKT << std::endl;
-    */
+    //pszSrcWKT = GDALGetProjectionRef( hSrcDS );
+    //CPLAssert( pszSrcWKT != NULL && strlen(pszSrcWKT) > 0 );
+    //std::cout << " pszDstWKT " << pszSrcWKT << std::endl;
+
 
     OGRSpatialReference oSRSIn;
     err=oSRSIn.importFromEPSG(4326);
@@ -951,6 +952,7 @@ int getValue(std::string pathTif, double x, double y){
 
     return aRes;
 }
+*/
 
 
 void processIRMData(){
