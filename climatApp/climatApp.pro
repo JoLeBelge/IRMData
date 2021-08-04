@@ -1,9 +1,12 @@
 TEMPLATE = app
-CONFIG += console c++11
+CONFIG += console c++17
 CONFIG -= app_bundle
 CONFIG -= qt
+QMAKE_CXXFLAGS = -Wno-c++11-narrowing
 
-LIBS += -lgdal -lsqlite3 -lboost_system -lboost_filesystem -lboost_program_options -lnetcdf_c++ -lcurlpp
+LIBS += -lgdal -lboost_system -lboost_filesystem -lboost_program_options
+#-lnetcdf_c++
+# -lsqlite3  pour ouvrir la BD de l'OWSF
 
 LIBS += -L$$PWD/usr/include/gdal/ -lgdal
 INCLUDEPATH += $$PWD/../../../../../../../..//usr/include/gdal/
@@ -24,8 +27,6 @@ TARGET = climatApp
 SOURCES += \
     irmdata.cpp \
         main.cpp\
-
-
 
 HEADERS+=\
         date.h\ \

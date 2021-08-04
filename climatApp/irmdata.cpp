@@ -111,7 +111,7 @@ dataOneDate irmData::moyAll(){
 dataOneDate irmData::dataMensuelDJ(year y, month m){
     std::vector<dataOneDate*> aVD;
 
-    // selection de toutes les dates qui sont antérieure dans l'année et qui font partie du moi
+    // selection de toutes les dates qui sont antérieure dans l'année et qui font partie du mois
     for (auto & kv : mVAllDates){
         year_month_day curYmd=kv.first;
         if (curYmd.year()==y && curYmd.month()<=m){
@@ -129,6 +129,29 @@ dataOneDate irmData::dataMensuelDJ(year y, month m){
     }
 
     return mensuel;
+}
+
+dataOneDate irmData::getMax(year y, month m){
+    std::vector<dataOneDate*> aVD;
+
+    // selection de toutes les dates qui sont antérieure dans l'année et qui font partie du mois
+    for (auto & kv : mVAllDates){
+        year_month_day curYmd=kv.first;
+        if (curYmd.year()==y && curYmd.month()<=m){
+            aVD.push_back(& kv.second);
+        }
+    }
+    std::cout << " irmData::getMax " << y << " , " <<m <<" , nombre de dates ;" << aVD.size() << std::endl;
+    // création d'un dataOneDate pour y mettre les valeurs maximum
+    year_month_day ymd(y,m,day{1});
+    dataOneDate max(ymd);
+
+    for ( dataOneDate * dod : aVD){
+        // je dois faire l'addition pour tout les pixels
+        max.getMax(dod);
+    }
+
+    return max;
 }
 
 void dataOneDate::addOneDate(dataOneDate * dod){
@@ -149,6 +172,31 @@ void dataOneDate::addOneDateDJ(dataOneDate * dod, double aSeuilDJ){
             // creation d'un nouveau dataOnePix
             dataOnePix djDop(&kv.second,aSeuilDJ);
             mVData.emplace(std::make_pair(kv.first,djDop));
+        }
+    }
+}
+
+void dataOneDate::getMax(dataOneDate * dod){
+    for (auto & kv : dod->mVData){
+        if (mVData.find(kv.first)!=mVData.end()){
+
+            dataOnePix dop = kv.second;
+
+                if (dop.Tmax>mVData.at(kv.first).Tmax){
+                    mVData.at(kv.first).Tmax=dop.Tmax;
+                }
+
+                if (dop.Tmean>mVData.at(kv.first).Tmean){
+                    mVData.at(kv.first).Tmean=dop.Tmean;
+                }
+
+                if (dop.Tmin>mVData.at(kv.first).Tmin){
+                    mVData.at(kv.first).Tmin=dop.Tmin;
+                }
+
+        } else {
+            // creation d'un nouveau dataOnePix
+            mVData.emplace(std::make_pair(kv.first,kv.second));
         }
     }
 }

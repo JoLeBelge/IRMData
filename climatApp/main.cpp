@@ -1,7 +1,6 @@
 #include <iostream>
 //#include <netcdfcpp.h>
-
-#include <sqlite3.h>
+//#include <sqlite3.h>
 #include "irmdata.h"
 
 
@@ -41,7 +40,7 @@ year_month_day baseymd = 1950_y/1/1;
 int NLON;
 int NLAT;
 // Return this in event of a problem.
-static const int NC_ERR = 2;
+//static const int NC_ERR = 2;
 
 extern std::vector<int> vYears;
 extern std::vector<int> vMonths;
@@ -99,9 +98,9 @@ main(int argc, char *argv[])
     GDALAllRegister();
     std::string aInTuile,aInArbre,aOut;
 
-    if (vm.count("outil")) {
+    if (vm.count("outils")) {
 
-        int mode(vm["outil"].as<int>());
+        int mode(vm["outils"].as<int>());
         switch (mode) {
         /*
          *
@@ -985,7 +984,7 @@ void processIRMData(){
     }
 
     // 2021 06 22 on recois P et ET0 trentenaire, je les traite ici
-
+if(0){
     // carte annuelle:
     dataOneDate da= d.dataAnnuel(year{1});
     da.exportMap("ETP_30aire","ETP");
@@ -997,6 +996,19 @@ void processIRMData(){
         mens.exportMap("ETP_30aire_"+std::to_string(m),"ETP");
         mens.exportMap("P_30aire_"+std::to_string(m),"P");
     }
+}
+
+// on veut la temperature max par pixel pour une année donnée
+for (int y : vYears){
+    int m(9);
+        std::cout << " calcul valeur température max pour " << y << std::endl;
+        dataOneDate mens=d.getMax(year{y},month{m});
+        mens.exportMap("XTX_"+std::to_string(y)+"_"+std::to_string(m),"Tmax");
+        mens.exportMap("XTMean_"+std::to_string(y)+"_"+std::to_string(m),"Tmean");
+        mens.exportMap("XTMin_"+std::to_string(y)+"_"+std::to_string(m),"Tmin");
+}
+
+
 
     /*
     //gdalsrsinfo  -o wkt epsg:31370

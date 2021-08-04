@@ -29,6 +29,7 @@ public:
     dataOneDate dataMensuel(year y, month m);
     // cumul de DJ pour un mois
     dataOneDate dataMensuelDJ(year y, month m);
+    dataOneDate getMax(year y, month m);
     dataOneDate dataAnnuel(year y);
     // Aurélien veux des données climatiques moyennes mais je n'ai pas encore les moyennes trentenaires, donc je fait la moyenne sur toute ces données là.
     dataOneDate moyAll();
@@ -45,6 +46,8 @@ public:
     void addOnePix(std::vector<std::string> & aLigne, int mode=1);
     void addOneDate(dataOneDate * dod);
     void addOneDateDJ(dataOneDate * dod, double aSeuilDJ);
+    void getMax(dataOneDate * dod);
+
 
     void divide(int nb);
     void exportMap(std::string aOut, std::string aVar);
