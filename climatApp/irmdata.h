@@ -5,7 +5,6 @@
 #include <vector>
 #include <boost/filesystem.hpp>
 #include <numeric>
-#include "boost/program_options.hpp"
 #include <boost/spirit/include/qi.hpp>
 #include <gdal.h>
 #include <gdal_priv.h>
@@ -13,7 +12,7 @@
 #include <gdalwarper.h>
 #include "ogr_spatialref.h"
 using namespace date;
-namespace po = boost::program_options;
+
 namespace qi = boost::spirit::qi;
 
 std::vector<std::vector<std::string>> parseCSV2V(std::string aFileIn, char aDelim);
