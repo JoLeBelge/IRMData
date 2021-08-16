@@ -15,18 +15,21 @@ irmData::irmData(std::string aFileIRM)
     for (int c(1); c<d.size();c++){
         std::vector<std::string> line=d.at(c);
         std::string aDate=line.at(0);
+
         // fonctionnement polyvalent si moyenne trentenaire - en fonction de la taille du champ date il définit le mode de lecture des données
         int d(1),m(1),y(1), mode(1);
         if (aDate.size()==5){
             d=std::stoi(aDate.substr(3,5));
             m=std::stoi(aDate.substr(0,2));
             //std::cout << " day " << d << " , " << " month " << m << std::endl;
-            mode=2;
+            //mode=2;
+            mode=3;
         }else{
             // une nouvelle date
             d=std::stoi(aDate.substr(8,9));
             m=std::stoi(aDate.substr(5,6));
             y=std::stoi(aDate.substr(0,4));
+           mode=4;
         }
 
         year_month_day ymd(year{y},month{m},day{d});
@@ -302,6 +305,22 @@ dataOnePix::dataOnePix(std::vector<std::string> & aLigne, int mode){
         P=std::stod(aLigne.at(4));
         ETP=std::stod(aLigne.at(5));
         Tmean=0;Tmax=0;Tmin=0;R=0;
+    } else if(mode==3){
+        //pdg1165-moyTrentenaire
+        //"month/day";"PIXEL_ID";"PIXEL_LON_CENTER";"PIXEL_LAT_CENTER";"GLOBAL RADIATION (kWh/m2/day)";"TEMPERATURE AVG (°C)";"TEMPERATURE MAX (°C)";"TEMPERATURE MIN (°C)";"PRESSURE (hPa)"
+        R=std::stod(aLigne.at(4));
+        Tmean=std::stod(aLigne.at(5));
+        Tmax=std::stod(aLigne.at(6));
+        Tmin=std::stod(aLigne.at(7));
+        P=std::stod(aLigne.at(8));
+
+
+    } else if(mode==4){
+        //pdg1165_2-P
+        //"DATE";"PIXEL_ID";"PIXEL_LON_CENTER";"PIXEL_LAT_CENTER";"TEMPERATURE AVG(°C)";"TEMPERATURE MAX (°C)";"TEMPERATURE MIN (°C)";"GLOBAL RADIATION (kWh/m2/day)";"PRECIPITATION (mm)";"ET0 (mm)"
+
+
+
     }
 }
 

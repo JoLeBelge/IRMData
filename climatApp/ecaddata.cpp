@@ -194,13 +194,24 @@ int ecadData::calculCarteMensuel(){
                                 }
                             }
 
-                            float sum_of_elems = std::accumulate(vVar.begin(), vVar.end(), 0);
+                            float sum_of_elems;
+                            if (0){
+                             sum_of_elems = std::accumulate(vVar.begin(), vVar.end(), 0);
                             //std::cout << " valeur finale de " << sum_of_elems << std::endl;
                             // moyenne de temp et de pression
                             if (!DG){
                                 if (varAccro=="tn" |varAccro=="tx" | varAccro=="tg" | varAccro=="pp" ){
                                     sum_of_elems=sum_of_elems/ndayInM;
                                 }}
+                            // test de calculer la variation de pression plutôt que la moyenne.
+                            } else {
+                                std::vector<float> vVar2;
+                                for (int c(1);c<vVar.size();c++){
+                                        float diff= vVar.at(c-1) - vVar.at(c);
+                                        vVar2.push_back(std::abs(diff));
+                                         sum_of_elems = std::accumulate(vVar2.begin(), vVar2.end(), 0);
+                                }
+                            }
                             // somme pour précipitation et radiation
 
                             varbuf=&sum_of_elems;
