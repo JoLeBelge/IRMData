@@ -5,41 +5,57 @@ std::vector<int> vMonths={3,4,5,6,7,8,9};
 extern double baseDJ;
 extern std::string IRMRasterTemplatepath;
 extern std::string pathOut;
+// la colonne dans laquelle est stoqué l'info - varie d'un fichier à un autre.
+int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0);
 
 irmData::irmData(std::string aFileIRM)
 {
     std::cout << " création du catalogue irm " << std::endl;
     std::vector<std::vector<std::string>> d=parseCSV2V(aFileIRM,';');
     std::cout << " fichier texte parsé " << std::endl;
+
+    // détermine les numéro de colonnes pour les variables
+    std::vector<std::string> headerline=d.at(0);
+    for (int c(0);c<headerline.size();c++){
+        std::string header=headerline.at(c);
+        std::cout << header << " est la colonne " << c << std::endl;
+        if (header.find("GLOBAL RADIATION")!=std::string::npos){colR=c;}
+        if (header.find("TEMPERATURE AVG")!=std::string::npos){colTmean=c;}
+        if (header.find("TEMPERATURE MAX")!=std::string::npos){colTmax=c;}
+        if (header.find("TEMPERATURE MIN")!=std::string::npos){colTmin=c;}
+        //if (header=="PRESSURE (hPa)"){colP=c;}
+        if (header.find("PRECIPITATION (mm)")!=std::string::npos){colP=c;}
+        if (header.find("ET")!=std::string::npos){colETP=c;}
+
+    }
+    std::cout << "Radiation colonne " << colR << " T mean colonne " << colTmean << " T max colonne " << colTmax << " T min colonne " << colTmin << "\n" << " Précipitation colonne " << colP << " ET0 colonne " << colETP << std::endl;
+
     std::string curDate("");
     for (int c(1); c<d.size();c++){
         std::vector<std::string> line=d.at(c);
         std::string aDate=line.at(0);
 
         // fonctionnement polyvalent si moyenne trentenaire - en fonction de la taille du champ date il définit le mode de lecture des données
-        int d(1),m(1),y(1), mode(1);
+        int d(1),m(1),y(1);
         if (aDate.size()==5){
             d=std::stoi(aDate.substr(3,5));
             m=std::stoi(aDate.substr(0,2));
             //std::cout << " day " << d << " , " << " month " << m << std::endl;
-            mode=2;
-            //mode=3;
         }else{
             // une nouvelle date
             d=std::stoi(aDate.substr(8,9));
             m=std::stoi(aDate.substr(5,6));
             y=std::stoi(aDate.substr(0,4));
-           //mode=4;
         }
 
         year_month_day ymd(year{y},month{m},day{d});
         if ( curDate!=aDate){
             //std::cout << " création des données irm pour une date , y " << y << " m " << m << " d " << d << std::endl;
             mVAllDates.emplace(std::make_pair(ymd,dataOneDate(ymd)));
-            mVAllDates.at(ymd).addOnePix(line,mode);
+            mVAllDates.at(ymd).addOnePix(line);
             curDate=aDate;
         } else {
-            mVAllDates.at(ymd).addOnePix(line,mode);
+            mVAllDates.at(ymd).addOnePix(line);
         }
     }
 }
@@ -96,7 +112,7 @@ dataOneDate irmData::moyAll(){
 
     // selection des dates qui font parties du mois
     for (auto & kv : mVAllDates){
-            aVD.push_back(& kv.second);
+        aVD.push_back(& kv.second);
     }
     // création d'un dataOneDate pour y mettre les valeurs mensuelles
     year_month_day ymd(year{1},month{1},day{1});
@@ -185,17 +201,17 @@ void dataOneDate::getMax(dataOneDate * dod){
 
             dataOnePix dop = kv.second;
 
-                if (dop.Tmax>mVData.at(kv.first).Tmax){
-                    mVData.at(kv.first).Tmax=dop.Tmax;
-                }
+            if (dop.Tmax>mVData.at(kv.first).Tmax){
+                mVData.at(kv.first).Tmax=dop.Tmax;
+            }
 
-                if (dop.Tmean>mVData.at(kv.first).Tmean){
-                    mVData.at(kv.first).Tmean=dop.Tmean;
-                }
+            if (dop.Tmean>mVData.at(kv.first).Tmean){
+                mVData.at(kv.first).Tmean=dop.Tmean;
+            }
 
-                if (dop.Tmin>mVData.at(kv.first).Tmin){
-                    mVData.at(kv.first).Tmin=dop.Tmin;
-                }
+            if (dop.Tmin>mVData.at(kv.first).Tmin){
+                mVData.at(kv.first).Tmin=dop.Tmin;
+            }
 
         } else {
             // creation d'un nouveau dataOnePix
@@ -209,9 +225,9 @@ dataOneDate::dataOneDate(year_month_day ymd){
     mDate=ymd;
 }
 
-void dataOneDate::addOnePix(std::vector<std::string> & aLigne, int mode){
+void dataOneDate::addOnePix(std::vector<std::string> & aLigne){
 
-    mVData.emplace(std::make_pair(std::stoi(aLigne.at(1)),dataOnePix(aLigne,mode)));
+    mVData.emplace(std::make_pair(std::stoi(aLigne.at(1)),dataOnePix(aLigne)));
 }
 
 void dataOneDate::divide(int nb){
@@ -287,41 +303,19 @@ void dataOnePix::divide(int nb){
         Tmean/=nb;
         Tmax/=nb;
         Tmin/=nb;
-        P/=nb;
+        //P/=nb;
         R/=nb;
-        ETP/=nb;
+        //ETP/=nb;
     }
 }
 
-dataOnePix::dataOnePix(std::vector<std::string> & aLigne, int mode){
-    if (mode==1){
-    Tmean=std::stod(aLigne.at(4));
-    Tmax=std::stod(aLigne.at(5));
-    Tmin=std::stod(aLigne.at(6));
-    R=std::stod(aLigne.at(7));
-    P=std::stod(aLigne.at(8));
-    ETP=std::stod(aLigne.at(9));
-    } else if(mode==2){
-        P=std::stod(aLigne.at(4));
-        ETP=std::stod(aLigne.at(5));
-        Tmean=0;Tmax=0;Tmin=0;R=0;
-    } else if(mode==3){
-        //pdg1165-moyTrentenaire
-        //"month/day";"PIXEL_ID";"PIXEL_LON_CENTER";"PIXEL_LAT_CENTER";"GLOBAL RADIATION (kWh/m2/day)";"TEMPERATURE AVG (°C)";"TEMPERATURE MAX (°C)";"TEMPERATURE MIN (°C)";"PRESSURE (hPa)"
-        R=std::stod(aLigne.at(4));
-        Tmean=std::stod(aLigne.at(5));
-        Tmax=std::stod(aLigne.at(6));
-        Tmin=std::stod(aLigne.at(7));
-        P=std::stod(aLigne.at(8));
-
-
-    } else if(mode==4){
-        //pdg1165_2-P
-        //"DATE";"PIXEL_ID";"PIXEL_LON_CENTER";"PIXEL_LAT_CENTER";"TEMPERATURE AVG(°C)";"TEMPERATURE MAX (°C)";"TEMPERATURE MIN (°C)";"GLOBAL RADIATION (kWh/m2/day)";"PRECIPITATION (mm)";"ET0 (mm)"
-
-
-
-    }
+dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(0),Tmax(0),Tmin(0),R(0),P(0),ETP(0){
+    if(colTmean!=0){Tmean=std::stod(aLigne.at(colTmean));}
+    if(colTmax!=0){Tmax=std::stod(aLigne.at(colTmax));}
+    if(colTmin!=0){Tmin=std::stod(aLigne.at(colTmin));}
+    if(colR!=0){R=std::stod(aLigne.at(colR));}
+    if(colP!=0){P=std::stod(aLigne.at(colP));}
+    if(colETP!=0){ETP=std::stod(aLigne.at(colETP));}
 }
 
 void dataOnePix::addOneDate(dataOnePix * dop){
@@ -348,7 +342,7 @@ dataOnePix::dataOnePix(dataOnePix * dop,double aSeuilDJ){
 void dataOnePix::addOneDateDJ(dataOnePix * dop, double aSeuilDJ){
     double DJTmean=dop->Tmean-aSeuilDJ;
     if (DJTmean>0){
-         Tmean+=DJTmean;
+        Tmean+=DJTmean;
     }
 }
 

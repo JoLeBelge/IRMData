@@ -11,6 +11,7 @@
 #include <gdal_utils.h>
 #include <gdalwarper.h>
 #include "ogr_spatialref.h"
+#include <string>
 using namespace date;
 
 namespace qi = boost::spirit::qi;
@@ -41,8 +42,8 @@ class dataOneDate
 {
 public:
     dataOneDate(year_month_day ymd);
-    // différent mode pour différent fichier , pas structuré pareil - pas très polyvalent comme code mais pas grave
-    void addOnePix(std::vector<std::string> & aLigne, int mode=1);
+
+    void addOnePix(std::vector<std::string> & aLigne);
     void addOneDate(dataOneDate * dod);
     void addOneDateDJ(dataOneDate * dod, double aSeuilDJ);
     void getMax(dataOneDate * dod);
@@ -61,8 +62,7 @@ class dataOnePix
 {
 public:
     dataOnePix():Tmean(0.0),Tmax(0),Tmin(0),R(0),ETP(0){}
-    dataOnePix(std::vector<std::string> & aLigne, int mode=1);// différent mode, car les données irm ne sont pas structuré pareil en fonction de la demande que l'on leur adresse
-
+    dataOnePix(std::vector<std::string> & aLigne);
     dataOnePix(dataOnePix * dop, double aSeuilDJ);
 
     void addOneDate(dataOnePix * dop);
