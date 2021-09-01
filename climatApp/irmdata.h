@@ -20,6 +20,9 @@ class dataOnePix;
 class dataOneDate;
 class irmData;
 
+// la colonne dans laquelle est stoqué l'info - varie d'un fichier à un autre.
+int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0);
+
 class irmData
 {
 public:
@@ -61,8 +64,7 @@ class dataOnePix
 {
 public:
     dataOnePix():Tmean(0.0),Tmax(0),Tmin(0),R(0),ETP(0){}
-    dataOnePix(std::vector<std::string> & aLigne, int mode=1);// différent mode, car les données irm ne sont pas structuré pareil en fonction de la demande que l'on leur adresse
-
+    dataOnePix(std::vector<std::string> & aLigne);
     dataOnePix(dataOnePix * dop, double aSeuilDJ);
 
     void addOneDate(dataOnePix * dop);

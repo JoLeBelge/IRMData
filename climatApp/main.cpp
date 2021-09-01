@@ -179,6 +179,12 @@ void processIRMData(){
     moy.exportMap("R_moy","R");
     }
 
+
+    /*for (int y : vYears){
+    dataOneDate da= d.dataAnnuel(year{y});
+    da.exportMap("R_"+std::to_string(y),"R");
+    }*/
+
     // 2021 06 22 on recois P et ET0 trentenaire, je les traite ici
 
 if(0){
@@ -198,13 +204,19 @@ if(0){
 if(1){
     // carte annuelle:
     dataOneDate da= d.dataAnnuel(year{1});
-    da.exportMap("R_30aire","R");
+    //da.exportMap("R_30aire","R");
+    da.exportMap("Tmean_30aire","Tmean");
+    da.exportMap("Tmax_30aire","Tmax");
+    da.exportMap("Tmin_30aire","Tmin");
 
     for (int m : {1,2,3,4,5,6,7,8,9,10,11,12}){
         std::cout << " calcul valeur mensuelles trentenaire "<< std::endl;
 
         dataOneDate mens=d.dataMensuel(year{1},month{m});
         mens.exportMap("R_30aire_"+std::to_string(m),"R");
+        mens.exportMap("Tmin_30aire_"+std::to_string(m),"Tmin");
+        mens.exportMap("Tmax_30aire_"+std::to_string(m),"Tmax");
+        mens.exportMap("Tmean_30aire_"+std::to_string(m),"Tmean");
         //mens.exportMap("P_30aire_"+std::to_string(m),"P");
     }
 }
