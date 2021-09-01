@@ -22,14 +22,14 @@ irmData::irmData(std::string aFileIRM)
             d=std::stoi(aDate.substr(3,5));
             m=std::stoi(aDate.substr(0,2));
             //std::cout << " day " << d << " , " << " month " << m << std::endl;
-            //mode=2;
-            mode=3;
+            mode=2;
+            //mode=3;
         }else{
             // une nouvelle date
             d=std::stoi(aDate.substr(8,9));
             m=std::stoi(aDate.substr(5,6));
             y=std::stoi(aDate.substr(0,4));
-           mode=4;
+           //mode=4;
         }
 
         year_month_day ymd(year{y},month{m},day{d});

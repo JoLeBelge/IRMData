@@ -7,5 +7,5 @@ l'outil à utiliser est donc l'outil numéro 4, car les 3 premiers concernent le
 
 Exemple d'utilisation;
 
-/climatApp --outil 4 --inputIRMFile /home/lisein/Documents/Scolyte/Data/climat/IRM/pdg1147-moyTrentenaire.csv --inputIRMRT ../pixel_id.tif --outDir=toto/
+./climatApp --outils 4 --inputIRMFile /home/lisein/Documents/Scolyte/Data/climat/IRM/pdg1147-moyTrentenaire.csv --inputIRMRT ../pixel_id.tif --outDir=toto/
 
