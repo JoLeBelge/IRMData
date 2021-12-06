@@ -153,9 +153,11 @@ int main(int argc, char *argv[])
 void processIRMData(){
 
     irmData d(irmDataFile);
-    if (0){
-    for (int y : vYears){
-        for (int m : vMonths){
+    if (1){
+    //for (int y : vYears){
+       // for (int m : vMonths){
+        for (int y :{2018,2019,2020}){
+         for (int m : {1,2,3,4,5,6,7,8,9,10,11,12}){
             std::cout << " calcul valeur mensuelles pour " << y << "/" << m << std::endl;
             if (0){
             dataOneDate mens=d.dataMensuel(year{y},month{m});
@@ -171,12 +173,14 @@ void processIRMData(){
             //break;
         }
     }
+   if (0){
     std::cout << " calcul valeur moyenne sur toute les données" << std::endl;
     dataOneDate moy=d.moyAll();
     moy.exportMap("Tmean_moy","Tmean");
     moy.exportMap("ETP_moy","ETP");
     moy.exportMap("P_moy","P");
     moy.exportMap("R_moy","R");
+    }
     }
 
 
