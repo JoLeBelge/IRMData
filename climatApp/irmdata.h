@@ -11,6 +11,7 @@
 #include <gdal_utils.h>
 #include <gdalwarper.h>
 #include "ogr_spatialref.h"
+#include <string>
 using namespace date;
 
 namespace qi = boost::spirit::qi;
@@ -19,9 +20,6 @@ std::vector<std::vector<std::string>> parseCSV2V(std::string aFileIn, char aDeli
 class dataOnePix;
 class dataOneDate;
 class irmData;
-
-// la colonne dans laquelle est stoqué l'info - varie d'un fichier à un autre.
-int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0);
 
 class irmData
 {
@@ -44,8 +42,8 @@ class dataOneDate
 {
 public:
     dataOneDate(year_month_day ymd);
-    // différent mode pour différent fichier , pas structuré pareil - pas très polyvalent comme code mais pas grave
-    void addOnePix(std::vector<std::string> & aLigne, int mode=1);
+
+    void addOnePix(std::vector<std::string> & aLigne);
     void addOneDate(dataOneDate * dod);
     void addOneDateDJ(dataOneDate * dod, double aSeuilDJ);
     void getMax(dataOneDate * dod);

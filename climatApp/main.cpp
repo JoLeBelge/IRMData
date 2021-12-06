@@ -1,7 +1,7 @@
 #include <iostream>
 #include <sqlite3.h>
 #include "irmdata.h"
-#include "ecaddata.h"
+//#include "ecaddata.h"
 #include "boost/program_options.hpp"
 
 namespace po = boost::program_options;
@@ -29,7 +29,7 @@ void processIRMData();
 void processECADData();
 
 // pour avoir ensemble une date, un identifiant de site et une position de site
-class dateSite;
+/*class dateSite;
 
 class dateSite{
 public:
@@ -45,7 +45,7 @@ public:
     year_month_day pose, releve;
     double X,Y;
     int djpose,djrel;
-};
+};*/
 
 int main(int argc, char *argv[])
 {
@@ -154,6 +154,7 @@ void processIRMData(){
 
     irmData d(irmDataFile);
     if (1){
+
     //for (int y : vYears){
        // for (int m : vMonths){
         for (int y :{2018,2019,2020}){
@@ -184,10 +185,18 @@ void processIRMData(){
     }
 
 
-    /*for (int y : vYears){
-    dataOneDate da= d.dataAnnuel(year{y});
-    da.exportMap("R_"+std::to_string(y),"R");
-    }*/
+    if (0){
+    for (int y : vYears){
+            dataOneDate mens=d.dataAnnuel(year{y});
+            mens.exportMap("P_"+std::to_string(y),"P");
+            mens.exportMap("ETP_"+std::to_string(y),"ETP");
+            std::cout << " calcul valeur moyenne sur toute les données" << std::endl;
+        }
+    }
+
+
+    //dataOneDate da= d.dataAnnuel(year{1});
+    //da.exportMap("P_30aire","P");
 
     // 2021 06 22 on recois P et ET0 trentenaire, je les traite ici
 
@@ -205,7 +214,7 @@ if(0){
     }
 }
    // 2021 08 13 moy trentenaire pour R et Température
-if(1){
+if(0){
     // carte annuelle:
     dataOneDate da= d.dataAnnuel(year{1});
     //da.exportMap("R_30aire","R");
@@ -256,7 +265,8 @@ for (int y : vYears){
 
 void processECADData(){
 
-    ecadData d;
-    d.calculCarteMensuel();
+    //ecadData d;
+    //d.calculCarteMensuel();
 
 }
+

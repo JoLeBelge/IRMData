@@ -5,6 +5,8 @@ std::vector<int> vMonths={3,4,5,6,7,8,9};
 extern double baseDJ;
 extern std::string IRMRasterTemplatepath;
 extern std::string pathOut;
+// la colonne dans laquelle est stoqué l'info - varie d'un fichier à un autre.
+int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0);
 
 irmData::irmData(std::string aFileIRM)
 {
@@ -16,13 +18,15 @@ irmData::irmData(std::string aFileIRM)
     std::vector<std::string> headerline=d.at(0);
     for (int c(0);c<headerline.size();c++){
         std::string header=headerline.at(c);
-        if (header=="GLOBAL RADIATION (kWh/m2/day)"){colR=c;}
-        if (header=="TEMPERATURE AVG (°C)"){colTmean=c;}
-        if (header=="TEMPERATURE MAX (°C)"){colTmax=c;}
-        if (header=="TEMPERATURE MIN (°C)"){colTmin=c;}
+        std::cout << header << " est la colonne " << c << std::endl;
+        if (header.find("GLOBAL RADIATION")!=std::string::npos){colR=c;}
+        if (header.find("TEMPERATURE AVG")!=std::string::npos){colTmean=c;}
+        if (header.find("TEMPERATURE MAX")!=std::string::npos){colTmax=c;}
+        if (header.find("TEMPERATURE MIN")!=std::string::npos){colTmin=c;}
         //if (header=="PRESSURE (hPa)"){colP=c;}
-        if (header=="PRECIPITATION (mm)"){colP=c;}
-        if (header=="ET0 (mm)"){colETP=c;}
+        if (header.find("PRECIPITATION (mm)")!=std::string::npos){colP=c;}
+        if (header.find("ET")!=std::string::npos){colETP=c;}
+
     }
     std::cout << "Radiation colonne " << colR << " T mean colonne " << colTmean << " T max colonne " << colTmax << " T min colonne " << colTmin << "\n" << " Précipitation colonne " << colP << " ET0 colonne " << colETP << std::endl;
 
@@ -48,10 +52,10 @@ irmData::irmData(std::string aFileIRM)
         if ( curDate!=aDate){
             //std::cout << " création des données irm pour une date , y " << y << " m " << m << " d " << d << std::endl;
             mVAllDates.emplace(std::make_pair(ymd,dataOneDate(ymd)));
-            mVAllDates.at(ymd).addOnePix(line,mode);
+            mVAllDates.at(ymd).addOnePix(line);
             curDate=aDate;
         } else {
-            mVAllDates.at(ymd).addOnePix(line,mode);
+            mVAllDates.at(ymd).addOnePix(line);
         }
     }
 }
@@ -221,9 +225,9 @@ dataOneDate::dataOneDate(year_month_day ymd){
     mDate=ymd;
 }
 
-void dataOneDate::addOnePix(std::vector<std::string> & aLigne, int mode){
+void dataOneDate::addOnePix(std::vector<std::string> & aLigne){
 
-    mVData.emplace(std::make_pair(std::stoi(aLigne.at(1)),dataOnePix(aLigne,mode)));
+    mVData.emplace(std::make_pair(std::stoi(aLigne.at(1)),dataOnePix(aLigne)));
 }
 
 void dataOneDate::divide(int nb){
@@ -299,9 +303,9 @@ void dataOnePix::divide(int nb){
         Tmean/=nb;
         Tmax/=nb;
         Tmin/=nb;
-        P/=nb;
+        //P/=nb;
         R/=nb;
-        ETP/=nb;
+        //ETP/=nb;
     }
 }
 
