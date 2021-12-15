@@ -6,7 +6,7 @@ extern double baseDJ;
 extern std::string IRMRasterTemplatepath;
 extern std::string pathOut;
 // la colonne dans laquelle est stoqué l'info - varie d'un fichier à un autre.
-int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0);
+int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0), colWS(0);
 
 irmData::irmData(std::string aFileIRM)
 {
@@ -26,9 +26,10 @@ irmData::irmData(std::string aFileIRM)
         //if (header=="PRESSURE (hPa)"){colP=c;}
         if (header.find("PRECIPITATION (mm)")!=std::string::npos){colP=c;}
         if (header.find("ET")!=std::string::npos){colETP=c;}
+        if (header.find("WIND SPEED")!=std::string::npos){colWS=c;}
 
     }
-    std::cout << "Radiation colonne " << colR << " T mean colonne " << colTmean << " T max colonne " << colTmax << " T min colonne " << colTmin << "\n" << " Précipitation colonne " << colP << " ET0 colonne " << colETP << std::endl;
+    std::cout << "Radiation colonne " << colR << " T mean colonne " << colTmean << " T max colonne " << colTmax << " T min colonne " << colTmin << "\n" << " Précipitation colonne " << colP << " ET0 colonne " << colETP << " , Wind speed colonne " << colWS << std::endl;
 
     std::string curDate("");
     for (int c(1); c<d.size();c++){
@@ -150,19 +151,53 @@ dataOneDate irmData::dataMensuelDJ(year y, month m){
     return mensuel;
 }
 
-dataOneDate irmData::getMax(year y, month m){
+dataOneDate irmData::getMax(year y, month m, bool allY){
     std::vector<dataOneDate*> aVD;
 
-    // selection de toutes les dates qui sont antérieure dans l'année et qui font partie du mois
     for (auto & kv : mVAllDates){
         year_month_day curYmd=kv.first;
+            // selection de toutes les dates qui sont antérieure dans l'année et qui font partie du mois
+       if (allY){
         if (curYmd.year()==y && curYmd.month()<=m){
             aVD.push_back(& kv.second);
         }
+       }else{
+               // selection de toutes les dates de ce mois uniquement (maximum mensuel donc)
+           if (curYmd.year()==y && curYmd.month()==m){
+               aVD.push_back(& kv.second);
+           }
+       }
     }
     std::cout << " irmData::getMax " << y << " , " <<m <<" , nombre de dates ;" << aVD.size() << std::endl;
     // création d'un dataOneDate pour y mettre les valeurs maximum
     year_month_day ymd(y,m,day{1});
+    dataOneDate max(ymd);
+
+    for ( dataOneDate * dod : aVD){
+        // je dois faire l'addition pour tout les pixels
+        max.getMax(dod);
+    }
+
+    return max;
+}
+
+
+dataOneDate irmData::getMax(std::vector<year_month_day> aYMDs){
+
+    std::vector<dataOneDate*> aVD;
+
+    for (year_month_day ymd : aYMDs){
+       if (mVAllDates.find(ymd)!=mVAllDates.end()){
+
+            aVD.push_back(& mVAllDates.at(ymd));
+
+       }else{
+           std::cout << " attention, je n'ai pas trouvé la date " << ymd << " dans le catalogue irmData " << std::endl;
+       }
+    }
+    std::cout << " irmData::getMax pour un vecteur de dates, nombre de dates trouvées;" << aVD.size() << std::endl;
+    // création d'un dataOneDate pour y mettre les valeurs maximum
+    year_month_day ymd(aYMDs.at(0));
     dataOneDate max(ymd);
 
     for ( dataOneDate * dod : aVD){
@@ -211,6 +246,9 @@ void dataOneDate::getMax(dataOneDate * dod){
 
             if (dop.Tmin>mVData.at(kv.first).Tmin){
                 mVData.at(kv.first).Tmin=dop.Tmin;
+            }
+            if (dop.WS>mVData.at(kv.first).WS){
+                mVData.at(kv.first).WS=dop.WS;
             }
 
         } else {
@@ -293,6 +331,8 @@ double dataOneDate::getValForPix(int pixel_id,std::string aVar){
             aRes=mVData.at(pixel_id).R;
         } else if (aVar=="P"){
             aRes=mVData.at(pixel_id).P;
+        } else if (aVar=="WS"){
+            aRes=mVData.at(pixel_id).WS;
         }
     }
     return aRes;
@@ -305,17 +345,19 @@ void dataOnePix::divide(int nb){
         Tmin/=nb;
         //P/=nb;
         R/=nb;
+        WS/=nb;
         //ETP/=nb;
     }
 }
 
-dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(0),Tmax(0),Tmin(0),R(0),P(0),ETP(0){
+dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(0),Tmax(0),Tmin(0),R(0),P(0),ETP(0),WS(0){
     if(colTmean!=0){Tmean=std::stod(aLigne.at(colTmean));}
     if(colTmax!=0){Tmax=std::stod(aLigne.at(colTmax));}
     if(colTmin!=0){Tmin=std::stod(aLigne.at(colTmin));}
     if(colR!=0){R=std::stod(aLigne.at(colR));}
     if(colP!=0){P=std::stod(aLigne.at(colP));}
     if(colETP!=0){ETP=std::stod(aLigne.at(colETP));}
+    if(colWS!=0){WS=std::stod(aLigne.at(colWS));}
 }
 
 void dataOnePix::addOneDate(dataOnePix * dop){
@@ -325,6 +367,7 @@ void dataOnePix::addOneDate(dataOnePix * dop){
     P+=dop->P;
     R+=dop->R;
     ETP+=dop->ETP;
+    WS+=dop->WS;
 }
 
 dataOnePix::dataOnePix(dataOnePix * dop,double aSeuilDJ){
@@ -336,6 +379,7 @@ dataOnePix::dataOnePix(dataOnePix * dop,double aSeuilDJ){
     P=0;
     R=0;
     ETP=0;
+    WS=0;
 }
 
 

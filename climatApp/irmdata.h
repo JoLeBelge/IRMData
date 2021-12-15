@@ -29,7 +29,8 @@ public:
     dataOneDate dataMensuel(year y, month m);
     // cumul de DJ pour un mois
     dataOneDate dataMensuelDJ(year y, month m);
-    dataOneDate getMax(year y, month m);
+    dataOneDate getMax(year y, month m,bool allY=true);
+    dataOneDate getMax(std::vector<year_month_day> aYMDs);
     dataOneDate dataAnnuel(year y);
     // Aurélien veux des données climatiques moyennes mais je n'ai pas encore les moyennes trentenaires, donc je fait la moyenne sur toute ces données là.
     dataOneDate moyAll();
@@ -48,6 +49,7 @@ public:
     void addOneDateDJ(dataOneDate * dod, double aSeuilDJ);
     void getMax(dataOneDate * dod);
 
+    year_month_day getDate(){return mDate;}
 
     void divide(int nb);
     void exportMap(std::string aOut, std::string aVar);
@@ -69,7 +71,7 @@ public:
     void addOneDateDJ(dataOnePix * dop, double aSeuilDJ);
     void divide(int nb);
 //private:
-    double Tmean,Tmax,Tmin,R,ETP, P;
+    double Tmean,Tmax,Tmin,R,ETP, P, WS;
 };
 
 #endif // IRMDATA_H
