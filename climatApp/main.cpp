@@ -1,7 +1,7 @@
 #include <iostream>
 #include <sqlite3.h>
 #include "irmdata.h"
-//#include "ecaddata.h"
+#include "ecaddata.h"
 #include "boost/program_options.hpp"
 
 namespace po = boost::program_options;
@@ -193,23 +193,11 @@ void processIRMData(){
     tel.exportMap("XWS_Eleanor","WS");
 
     std::vector<year_month_day> Fionn;
-    Eleanor.push_back(year_month_day(year{2018},month{1},day{16}));
-    Eleanor.push_back(year_month_day(year{2018},month{1},day{17}));
-    Eleanor.push_back(year_month_day(year{2018},month{1},day{18}));
+    Fionn.push_back(year_month_day(year{2018},month{1},day{16}));
+    Fionn.push_back(year_month_day(year{2018},month{1},day{17}));
+    Fionn.push_back(year_month_day(year{2018},month{1},day{18}));
     dataOneDate tfionn = d.getMax(Fionn);
     tfionn.exportMap("XWS_FionnDavid","WS");
-
-    /*std::vector<year_month_day> David;
-    Eleanor.push_back(year_month_day(year{2018},month{1},day{16}));
-    Eleanor.push_back(year_month_day(year{2018},month{1},day{17}));
-    Eleanor.push_back(year_month_day(year{2018},month{1},day{18}));
-    dataOneDate tfionn = d.getMax(Fionn);
-    tfionn.exportMap("XWS_Fionn","WS");*/
-
-
-
-
-
 
     if (0){
 
@@ -323,8 +311,13 @@ void processIRMData(){
 
 void processECADData(){
 
-    //ecadData d;
-    //d.calculCarteMensuel();
+    ecadData d;
+
+    std::vector<int> y{2018};
+    d.calculCarteMensuel(y,"tg");
+    /*d.calculCarteMensuel(y,"rr");
+    d.calculCarteMensuelTrentenaire(year{1991},year{2020}, "tg");
+    d.calculCarteMensuelTrentenaire(year{1991},year{2020}, "rr");*/
 
 }
 

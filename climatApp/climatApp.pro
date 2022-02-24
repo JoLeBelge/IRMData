@@ -4,8 +4,7 @@ CONFIG -= app_bundle
 CONFIG -= qt
 QMAKE_CXXFLAGS = -Wno-c++11-narrowing
 
-LIBS += -lgdal -lboost_system -lboost_filesystem -lboost_program_options
-#-lnetcdf_c++
+LIBS += -lgdal -lboost_system -lboost_filesystem -lboost_program_options -lnetcdf_c++
 # -lsqlite3  pour ouvrir la BD de l'OWSF
 
 LIBS += -L$$PWD/usr/include/gdal/ -lgdal
@@ -25,13 +24,13 @@ DEPENDPATH += $$PWD/../date/include/
 TARGET = climatApp
 
 SOURCES += \
-    #ecaddata.cpp \
+    ecaddata.cpp \
     irmdata.cpp \
         main.cpp\
 
 HEADERS+=\
         date.h\ \
-    #ecaddata.h \
+    ecaddata.h \
     irmdata.h
 
 
