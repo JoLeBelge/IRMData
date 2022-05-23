@@ -9,3 +9,15 @@ Exemple d'utilisation;
 
 ./climatApp --outils 4 --inputIRMFile /home/lisein/Documents/Scolyte/Data/climat/IRM/pdg1147-moyTrentenaire.csv --inputIRMRT ../pixel_id.tif --outDir=toto/
 
+Installation ; netcdfcpp
+wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-cxx-4.2.tar.gz
+tar -xzf netcdf-cxx-4.2.tar.gz
+cd netcdf-cxx-4.2
+./configure 
+make 
+sudo make install
+
+cloner dépot date aussi.
+
+
+

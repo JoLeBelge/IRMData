@@ -338,7 +338,7 @@ int ecadData::calculCarteMensuel(std::vector<int> avYears, std::string varAccro,
                 pRaster->SetGeoTransform( transform );
 
                 // le tif qui synthétisera les info mensuelles---------------------------------------
-                std::string aName(varAccro+getMode(varAccro,type)+"_"+std::to_string(int (ym.year()))+"_"+ym.month().getM());
+                std::string aName(varAccro+getMode(varAccro,type)+"_"+std::to_string(int (ym.year()))+"_"+format("%m",ym));
                 if (DG){aName=aName+"_DG";}
 
                 std::string output2("/home/lisein/Documents/Scolyte/Data/climat/eobs24/trentenaire/"+aName+".tif");
