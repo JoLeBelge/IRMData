@@ -20,7 +20,7 @@ safranData::safranData(std::string aFileIn):irmData()
 
     for (int ay : {2012,2013,2014,2015,2016,2017,2018,2019,2020}){
     //for (int ay : {2018}){
-        aFileIn="/home/lisein/Documents/Scolyte/Data/climat/SAFRAN/Safran_params_"+std::to_string(ay)+".csv";
+        aFileIn="/home/jo/Documents/Scolyte/Data/climat/SAFRAN/Safran_params_"+std::to_string(ay)+".csv";
 
         std::cout << " création du catalogue Safran pour fichier " << aFileIn << std::endl;
         std::vector<std::vector<std::string>> d=parseCSV2V(aFileIn,';');
