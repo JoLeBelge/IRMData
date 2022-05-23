@@ -6,7 +6,7 @@ extern double baseDJ;
 extern std::string IRMRasterTemplatepath;
 extern std::string pathOut;
 // la colonne dans laquelle est stoqué l'info - varie d'un fichier à un autre.
-int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0), colWS(0);
+int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0), colWS(0),colP2(0);
 
 irmData::irmData(std::string aFileIRM)
 {
@@ -76,10 +76,16 @@ dataOneDate irmData::dataMensuel(year y, month m){
     dataOneDate mensuel(ymd);
     for ( dataOneDate * dod : aVD){
         // je dois faire l'addition pour tout les pixels
+
+        //  La méthode ne fonctionne pas pour sélectionner le maximum ou le minimum.
         mensuel.addOneDate(dod);
     }
     // pour avoir la moyenne ; je divise par le nombre d'observations.
     mensuel.divide(aVD.size());
+
+
+
+
     return mensuel;
 }
 
@@ -111,7 +117,7 @@ dataOneDate irmData::dataAnnuel(year y){
 dataOneDate irmData::moyAll(){
     std::vector<dataOneDate*> aVD;
 
-    // selection des dates qui font parties du mois
+
     for (auto & kv : mVAllDates){
         aVD.push_back(& kv.second);
     }
@@ -125,6 +131,32 @@ dataOneDate irmData::moyAll(){
     // pour avoir la moyenne ; je divise par le nombre d'observations.
     mensuel.divide(aVD.size());
     return mensuel;
+}
+
+dataOneDate irmData::calculCarteMensuelTrentenaire(year y1, year y2, month m){
+    std::vector<dataOneDate*> aVD;
+    // selection des dates qui font parties du mois
+    for (auto & kv : mVAllDates){
+        year_month_day curYmd=kv.first;
+        if (curYmd.month()==m){
+        aVD.push_back(& kv.second);
+        }
+    }
+    // création d'un dataOneDate pour y mettre les valeurs mensuelles
+    year_month_day ymd(year{1},month{m},day{1});
+    dataOneDate mensuel(ymd);
+    for ( dataOneDate * dod : aVD){
+        // je dois faire l'addition pour tout les pixels
+        mensuel.addOneDate(dod);
+    }
+    int nby =((int) y2-(int)y1)+1;
+
+    std::cout << "number of year " << nby << std::endl;
+    // pour avoir la moyenne ; je divise par le nombre d'observations.
+    // mais c'est faux pour les variables pour lesquelles je veux la somme ; reste à diviser par le nombre de mois
+    mensuel.divide(aVD.size(),nby);
+    return mensuel;
+
 }
 
 
@@ -268,9 +300,13 @@ void dataOneDate::addOnePix(std::vector<std::string> & aLigne){
     mVData.emplace(std::make_pair(std::stoi(aLigne.at(1)),dataOnePix(aLigne)));
 }
 
-void dataOneDate::divide(int nb){
+void dataOneDate::addOnePix(std::vector<std::string> & aLigne, int id){
+    mVData.emplace(std::make_pair(id,dataOnePix(aLigne)));
+}
+
+void dataOneDate::divide(int nb, int nbMois){
     for (auto & kv : mVData){
-        kv.second.divide(nb);
+        kv.second.divide(nb,nbMois);
     }
 }
 
@@ -333,29 +369,34 @@ double dataOneDate::getValForPix(int pixel_id,std::string aVar){
             aRes=mVData.at(pixel_id).P;
         } else if (aVar=="WS"){
             aRes=mVData.at(pixel_id).WS;
+        } else if (aVar=="TminMin"){
+            aRes=mVData.at(pixel_id).TminMin;
         }
     }
     return aRes;
 }
 
-void dataOnePix::divide(int nb){
+void dataOnePix::divide(int nb, int nbMois){
     if (nb!=0){
         Tmean/=nb;
         Tmax/=nb;
         Tmin/=nb;
-        //P/=nb;
+        P/=nbMois;
         R/=nb;
         WS/=nb;
-        //ETP/=nb;
+        ETP/=nb;
     }
 }
 
 dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(0),Tmax(0),Tmin(0),R(0),P(0),ETP(0),WS(0){
     if(colTmean!=0){Tmean=std::stod(aLigne.at(colTmean));}
     if(colTmax!=0){Tmax=std::stod(aLigne.at(colTmax));}
-    if(colTmin!=0){Tmin=std::stod(aLigne.at(colTmin));}
+    if(colTmin!=0){Tmin=std::stod(aLigne.at(colTmin));TminMin=Tmin;}
     if(colR!=0){R=std::stod(aLigne.at(colR));}
-    if(colP!=0){P=std::stod(aLigne.at(colP));}
+    if(colP!=0 && colP2==0){P=std::stod(aLigne.at(colP));}
+    // précipitation liquide et neige , safran
+    if(colP!=0 && colP2!=0){P=std::stod(aLigne.at(colP))+std::stod(aLigne.at(colP2));}
+
     if(colETP!=0){ETP=std::stod(aLigne.at(colETP));}
     if(colWS!=0){WS=std::stod(aLigne.at(colWS));}
 }
@@ -363,6 +404,7 @@ dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(0),Tmax(0),Tmin(
 void dataOnePix::addOneDate(dataOnePix * dop){
     Tmean+=dop->Tmean;
     Tmax+=dop->Tmax;
+    if (TminMin>dop->Tmin){TminMin=dop->Tmin;}
     Tmin+=dop->Tmin;
     P+=dop->P;
     R+=dop->R;
@@ -388,37 +430,4 @@ void dataOnePix::addOneDateDJ(dataOnePix * dop, double aSeuilDJ){
     if (DJTmean>0){
         Tmean+=DJTmean;
     }
-}
-
-std::vector<std::vector<std::string>> parseCSV2V(std::string aFileIn, char aDelim){
-    qi::rule<std::string::const_iterator, std::string()> quoted_string = '"' >> *(qi::char_ - '"') >> '"';
-    qi::rule<std::string::const_iterator, std::string()> valid_characters = qi::char_ - '"' - aDelim;
-    qi::rule<std::string::const_iterator, std::string()> item = *(quoted_string | valid_characters );
-    qi::rule<std::string::const_iterator, std::vector<std::string>()> csv_parser = item % aDelim;
-
-    std::vector<std::vector<std::string>> aOut;
-    std::ifstream aFichier(aFileIn.c_str());
-    if(aFichier)
-    {
-        std::string aLine;
-        while(!aFichier.eof())
-        {
-            getline(aFichier,aLine,'\n');
-            if(aLine.size() != 0)
-            {
-                std::string::const_iterator s_begin = aLine.begin();
-                std::string::const_iterator s_end = aLine.end();
-                std::vector<std::string> result;
-                bool r = boost::spirit::qi::parse(s_begin, s_end, csv_parser, result);
-                assert(r == true);
-                assert(s_begin == s_end);
-                // ajout d'un element au vecteur de vecteur
-                aOut.push_back(result);
-            }
-        }
-        aFichier.close();
-    } else {
-        std::cout << "file " << aFileIn << " not found " <<std::endl;
-    }
-    return aOut;
 }

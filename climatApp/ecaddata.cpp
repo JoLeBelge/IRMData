@@ -10,14 +10,14 @@ ecadData::ecadData()
 
 }
 
-int ecadData::calculCarteMensuelTrentenaire(year y1,year y2, std::string varAccro){
+int ecadData::calculCarteMensuelTrentenaire(year y1, year y2, std::string varAccro, resumeMensuel type, std::string prefix){
 
     std::cout << " traitement variable climatique " << varAccro << ", calcul normale mensuelle entre " << y1 << " et " << y2 << std::endl;
 
     double scaleF=getScaleF(varAccro);
     std::string ncpath=getNamePath(varAccro);
     boost::filesystem::path ap(ncpath);
-    std::string tifModel=getNameTifModel(varAccro,2);
+    std::string tifModel=getNameTifModel(varAccro,1);
     const char * p=ncpath.c_str();
 
     NcFile in(p,NcFile::FileMode::ReadOnly,NULL,0,NcFile::FileFormat::Netcdf4);
@@ -55,7 +55,8 @@ int ecadData::calculCarteMensuelTrentenaire(year y1,year y2, std::string varAccr
 
         float var_in[NLAT][NLON];
 
-        inVar=in.get_var(2); // attention pour la version 24 c'est l'id 2, pas le 3!!!
+        //inVar=in.get_var(2); // attention pour la version 24 c'est l'id 2, pas le 3!!!
+        inVar=in.get_var(varAccro.c_str());
         std::cout << "invar->name() " <<inVar->name() << "\n\n\n"<< std::endl;
 
         int nbY=((int) y2-(int)y1)+1;
@@ -65,9 +66,7 @@ int ecadData::calculCarteMensuelTrentenaire(year y1,year y2, std::string varAccr
         // boucle sur chaque année de la période trimestrielle et ensuite sur chaque moi de cette année.
         for (int m(1) ; m <13 ; m++){
             std::cout << " calcul valeur mensuelles  trentenaire pour " << m << std::endl;
-
-            // le tif qui synthétisera les info mensuelles---------------------------------------
-            std::string aName(varAccro+"_"+std::to_string(m)+"_"+std::to_string(nbY));
+            std::string aName(varAccro+getMode(varAccro,type)+"_"+std::to_string(m)+"_"+prefix+std::to_string(nbY));
             std::string output2("/home/lisein/Documents/Scolyte/Data/climat/eobs24/trentenaire/"+aName+".tif");
             const char *out2=output2.c_str();
             std::string output3="/home/lisein/Documents/Scolyte/Data/climat/eobs24/trentenaire/"+aName+"_BL72.tif";
@@ -100,15 +99,13 @@ int ecadData::calculCarteMensuelTrentenaire(year y1,year y2, std::string varAccr
             pTemplateRaster->GetGeoTransform(transform);
             pRaster->SetGeoTransform( transform );
 
+
             if (varAccro=="tn" |varAccro=="tx" | varAccro=="tg" | varAccro=="rr" | varAccro=="pp"){
                 pMensuelRaster = pDriver->Create(out2,  NLON,NLAT,1, GDT_Float32, NULL);
             } else {// qq et pp
                 pMensuelRaster = pDriver->Create(out2,  NLON,NLAT,1, GDT_Int16, NULL);
             }
-
             pMensuelRaster->SetGeoTransform( transform );
-
-            pRaster->SetSpatialRef(pTemplateRaster->GetSpatialRef());
 
             OGRSpatialReference src;
             src.importFromEPSG(4326);
@@ -188,16 +185,53 @@ int ecadData::calculCarteMensuelTrentenaire(year y1,year y2, std::string varAccr
                         }
                     }
 
-                    float sum_of_elems;
 
-                    sum_of_elems = std::accumulate(vVar.begin(), vVar.end(), 0);
                     //std::cout << " valeur finale de " << sum_of_elems << std::endl;
-                    // moyenne de temp et de pression
+                    int ntot=ndayInMTot;
+                    if (vVar.size()>0 && vVar.size()!= ndayInMTot){
+                        //std::cout << " attention, il y a des no data pour " << varAccro << ", nombre d'observation " << vVar.size() << " sur un total de " << ndayInMTot << std::endl;
+                        ntot=vVar.size();
+                    }
 
                     if (varAccro=="tn" |varAccro=="tx" | varAccro=="tg" | varAccro=="pp" ){
-                        sum_of_elems=sum_of_elems/ndayInMTot;
+
                     } else {
-                       sum_of_elems=sum_of_elems/nbY;
+                       type=resumeMensuel::sum;
+                    }
+
+                    float sum_of_elems;
+                    switch (type) {
+                    case resumeMensuel::moy:{
+                         sum_of_elems = std::accumulate(vVar.begin(), vVar.end(), 0);
+                         sum_of_elems=sum_of_elems/ntot;
+                        break;
+                    }
+                    case resumeMensuel::sum:{
+                         sum_of_elems = std::accumulate(vVar.begin(), vVar.end(), 0);
+                         sum_of_elems=sum_of_elems/((double)nbY)*(((double) ndayInMTot)/((double) ntot));
+                        break;
+                    }
+                    case resumeMensuel::min:{
+
+                        if (vVar.size()>0){
+                        int index =std::min_element(vVar.begin(),vVar.end()) - vVar.begin();
+
+                        sum_of_elems =vVar.at(index);}else {
+                            sum_of_elems =0;
+                        }
+                        break;
+                    }
+                    case resumeMensuel::max:{
+                        if (vVar.size()>0){
+                        int index =std::max_element(vVar.begin(),vVar.end()) - vVar.begin();
+                        sum_of_elems =vVar.at(index);}else {
+                            sum_of_elems =0;
+                        }
+                        break;
+                    }
+
+                    default:
+                        break;
                     }
 
                     varbuf=&sum_of_elems;
@@ -218,7 +252,7 @@ int ecadData::calculCarteMensuelTrentenaire(year y1,year y2, std::string varAccr
 
 
 
-int ecadData::calculCarteMensuel(std::vector<int> avYears, std::string varAccro){
+int ecadData::calculCarteMensuel(std::vector<int> avYears, std::string varAccro, resumeMensuel type){
     //std::vector<std::string> accro{"qq", "tn", "tx", "pp", "rr", "tg"};
     // pp c'est la pression qui est de 1000 par jour donc somme par mois est de 30000 et ça fonctionne pas
     //std::vector<std::string> accro{ "tn", "tx", "rr", "tg","qq"};
@@ -268,7 +302,8 @@ int ecadData::calculCarteMensuel(std::vector<int> avYears, std::string varAccro)
 
         float var_in[NLAT][NLON];
 
-        inVar=in.get_var(2);
+        //inVar=in.get_var(2);
+        inVar=in.get_var(varAccro.c_str());
         std::cout << "invar->name() " <<inVar->name() << std::endl;
 
         for (int y : avYears){
@@ -303,7 +338,7 @@ int ecadData::calculCarteMensuel(std::vector<int> avYears, std::string varAccro)
                 pRaster->SetGeoTransform( transform );
 
                 // le tif qui synthétisera les info mensuelles---------------------------------------
-                std::string aName(varAccro+"_"+std::to_string(int (ym.year()))+"_"+ym.month().getM());
+                std::string aName(varAccro+getMode(varAccro,type)+"_"+std::to_string(int (ym.year()))+"_"+ym.month().getM());
                 if (DG){aName=aName+"_DG";}
 
                 std::string output2("/home/lisein/Documents/Scolyte/Data/climat/eobs24/trentenaire/"+aName+".tif");
@@ -389,9 +424,49 @@ int ecadData::calculCarteMensuel(std::vector<int> avYears, std::string varAccro)
                             }
                         }
 
+                        if (varAccro=="tn" | varAccro=="tg" | varAccro=="pp" ){
+
+                        } else if (varAccro=="tx") {
+                           type=resumeMensuel::max;
+                        }else {
+                           type=resumeMensuel::sum;
+                        }
+
                         float sum_of_elems;
+                        switch (type) {
+                        case resumeMensuel::moy:{
+                             sum_of_elems = std::accumulate(vVar.begin(), vVar.end(), 0);
+                             sum_of_elems=sum_of_elems/ndayInM;
+                            break;
+                        }
+                        case resumeMensuel::sum:{
+                             sum_of_elems = std::accumulate(vVar.begin(), vVar.end(), 0);
+                            break;
+                        }
+                        case resumeMensuel::min:{
+                            //std::cout << " get minimum of the variable " << varAccro << std::endl;
+                            std::vector<float>::iterator result = std::min_element(vVar.begin(),vVar.end());
+                            //std::cout << "min element at: " << std::distance(v.begin(), result);
+                            sum_of_elems=std::distance(vVar.begin(), result);
+                            break;
+                        }
+                        case resumeMensuel::max:{
+                            if (vVar.size()>0){
+                            int index =std::max_element(vVar.begin(),vVar.end()) - vVar.begin();
+                            sum_of_elems =vVar.at(index);}else {
+                                sum_of_elems =0;
+                            }
+                            break;
+                        }
+
+
+                        default:
+                            break;
+                        }
+
+
                         //if (1){
-                            sum_of_elems = std::accumulate(vVar.begin(), vVar.end(), 0);
+                            /*sum_of_elems = std::accumulate(vVar.begin(), vVar.end(), 0);
                             //std::cout << " valeur finale de " << sum_of_elems << std::endl;
                             // moyenne de temp et de pression
                             if (!DG){
@@ -399,7 +474,7 @@ int ecadData::calculCarteMensuel(std::vector<int> avYears, std::string varAccro)
                                     sum_of_elems=sum_of_elems/ndayInM;
                                 }}
                             // test de calculer la variation de pression plutôt que la moyenne.
-                       /* } else {
+                        } else {
                             std::vector<float> vVar2;
                             for (int c(1);c<vVar.size();c++){
                                 float diff= vVar.at(c-1) - vVar.at(c);

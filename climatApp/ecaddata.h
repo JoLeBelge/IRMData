@@ -28,6 +28,14 @@ extern std::vector<int> vMonths;
 extern double baseDJ;
 
 
+// différent moyen d'aggréger les valeurs par mois
+enum resumeMensuel {moy
+                    ,min
+                    ,sum
+                    ,max
+                   };
+
+
 class ecadData
 {
 public:
@@ -35,9 +43,9 @@ public:
 
     void projectRasterCallgdal(std::string inPath, std::string outPath);
 
-    int calculCarteMensuel(std::vector<int> avYears, std::string varAccro);
+    int calculCarteMensuel(std::vector<int> avYears, std::string varAccro, resumeMensuel type=resumeMensuel::moy);
     // pas spécialement trentenaire mais moyenne de plusieurs années.
-    int calculCarteMensuelTrentenaire(year y1, year y2, std::string varAccro="tg");
+    int calculCarteMensuelTrentenaire(year y1, year y2, std::string varAccro="tg", resumeMensuel type=resumeMensuel::moy,std::string prefix="");
 
     void exportCarteUneDate(year_month_day ymd, std::string varAccro="qq");
 
@@ -53,15 +61,32 @@ public:
         return scaleF;
     }
 
-    //std::string getNamePath(std::string var){return "/home/lisein/Documents/Scolyte/Data/climat/01deg/"+var+"_ens_mean_0.1deg_reg_2011-2020_v22.0e.nc";}
-    std::string getNamePath(std::string var){return "/home/lisein/Documents/Scolyte/Data/climat/eobs24/"+var+"_ens_mean_0.25deg_reg_v24.0e.nc";}
+    std::string getMode(std::string varAccro,resumeMensuel type){
+        std::string mode("");
+       if (type== resumeMensuel::sum && varAccro!="rr"){
+             mode="sum";
+        }
+       if (type== resumeMensuel::min){
+             mode="min";
+        }
+       if (type== resumeMensuel::max){
+             mode="max";
+        }
+       return mode;
+    }
 
-    // il sert à rien ce template, juste à définir le src je pense. un peu idiot de procédé comme ça.
-    std::string getNameTifModel(std::string var, int resol=1){
+    std::string getNamePath(std::string var){return "/home/lisein/Documents/Scolyte/Data/climat/01deg/"+var+"_ens_mean_0.1deg_reg_2011-2020_v22.0e.nc";}
+    //std::string getNamePath(std::string var){return "/home/lisein/Documents/Scolyte/Data/climat/eobs24/"+var+"_ens_mean_0.25deg_reg_v24.0e.nc";}
+
+
+    // il sert à définir la transformation ce template, et à définir le src je pense.
+   std::string getNameTifModel(std::string var, int resol=1){
         var="tg";
         std::string aRes("/home/lisein/Documents/Scolyte/Data/climat/01deg/template_"+var+".tif");
         if (resol==2){
              aRes="/home/lisein/Documents/Scolyte/Data/climat/eobs24/template_"+var+".tif";
+        } else {
+            aRes="/home/lisein/Documents/Scolyte/Data/climat/01deg/template.tif";
         }
         return aRes;
     }

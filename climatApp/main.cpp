@@ -2,6 +2,7 @@
 #include <sqlite3.h>
 #include "irmdata.h"
 #include "ecaddata.h"
+#include "safrandata.h"
 #include "boost/program_options.hpp"
 
 namespace po = boost::program_options;
@@ -25,6 +26,7 @@ extern std::vector<int> vMonths;
 double baseDJ(8.3); // baier
 
 void processIRMData();
+void processSAFRAN();
 
 void processECADData();
 
@@ -72,7 +74,16 @@ int main(int argc, char *argv[])
     }
 
     GDALAllRegister();
-    std::string aInTuile,aInArbre,aOut;
+    //std::string aInTuile,aInArbre,aOut;
+
+    if (vm.count("inputIRMFile")) {irmDataFile=vm["inputIRMFile"].as<std::string>();
+        std::cout << " je vais utiliser le fichier de donnée IRM " << irmDataFile << std::endl;
+    }
+    if (vm.count("inputIRMRT")) {IRMRasterTemplatepath=vm["inputIRMRT"].as<std::string>();
+        std::cout << " je vais utiliser le raster template de l'IRM " << IRMRasterTemplatepath << std::endl;}
+    if (vm.count("outDir")) {pathOut=vm["outDir"].as<std::string>();
+    std::cout << " j'écrirai les résutats dans le dossier " << pathOut << std::endl;}
+
 
     if (vm.count("outils")) {
 
@@ -124,13 +135,7 @@ int main(int argc, char *argv[])
         case 4:{
             std::cout << " create map for IRM" << std::endl;
 
-            if (vm.count("inputIRMFile")) {irmDataFile=vm["inputIRMFile"].as<std::string>();
-                std::cout << " je vais utiliser le fichier de donnée IRM " << irmDataFile << std::endl;
-            }
-            if (vm.count("inputIRMRT")) {IRMRasterTemplatepath=vm["inputIRMRT"].as<std::string>();
-                std::cout << " je vais utiliser le raster template de l'IRM " << IRMRasterTemplatepath << std::endl;}
-            if (vm.count("outDir")) {pathOut=vm["outDir"].as<std::string>();}
-            std::cout << " j'écrirai les résutats dans le dossier " << pathOut << std::endl;
+
 
             if (boost::filesystem::exists(irmDataFile)){
 
@@ -142,6 +147,16 @@ int main(int argc, char *argv[])
             } else {
                 std::cout << " je ne peux rien faire car " << irmDataFile << " n'existe pas..." <<std::endl;
             }
+            break;
+        }
+            /*
+             *
+             * SAFRAN
+             *
+             */
+        case 5:{
+            std::cout << " create map for SAFRAN data" << std::endl;
+            processSAFRAN();
             break;
         }
         }
@@ -173,31 +188,33 @@ void processIRMData(){
     //tempête Fionn (16_18 janvier 2018 modéré sur la wallonie)
     // 18/01  (tempête david 2018)
 
-    std::vector<year_month_day> Ana;
-    Ana.push_back(year_month_day(year{2017},month{10},day{12}));
-    Ana.push_back(year_month_day(year{2017},month{10},day{13}));
-    Ana.push_back(year_month_day(year{2017},month{10},day{14}));
-    dataOneDate tana = d.getMax(Ana);
-    tana.exportMap("XWS_Ana","WS");
+    if (0){
+        std::vector<year_month_day> Ana;
+        Ana.push_back(year_month_day(year{2017},month{10},day{12}));
+        Ana.push_back(year_month_day(year{2017},month{10},day{13}));
+        Ana.push_back(year_month_day(year{2017},month{10},day{14}));
+        dataOneDate tana = d.getMax(Ana);
+        tana.exportMap("XWS_Ana","WS");
 
-    std::vector<year_month_day> Carmen;
-    Carmen.push_back(year_month_day(year{2017},month{12},day{29}));
-    dataOneDate tcar = d.getMax(Carmen);
-    tcar.exportMap("XWS_Carmen","WS");
+        std::vector<year_month_day> Carmen;
+        Carmen.push_back(year_month_day(year{2017},month{12},day{29}));
+        dataOneDate tcar = d.getMax(Carmen);
+        tcar.exportMap("XWS_Carmen","WS");
 
-    std::vector<year_month_day> Eleanor;
-    Eleanor.push_back(year_month_day(year{2018},month{1},day{1}));
-    Eleanor.push_back(year_month_day(year{2018},month{1},day{2}));
-    Eleanor.push_back(year_month_day(year{2018},month{1},day{3}));
-    dataOneDate tel = d.getMax(Eleanor);
-    tel.exportMap("XWS_Eleanor","WS");
+        std::vector<year_month_day> Eleanor;
+        Eleanor.push_back(year_month_day(year{2018},month{1},day{1}));
+        Eleanor.push_back(year_month_day(year{2018},month{1},day{2}));
+        Eleanor.push_back(year_month_day(year{2018},month{1},day{3}));
+        dataOneDate tel = d.getMax(Eleanor);
+        tel.exportMap("XWS_Eleanor","WS");
 
-    std::vector<year_month_day> Fionn;
-    Fionn.push_back(year_month_day(year{2018},month{1},day{16}));
-    Fionn.push_back(year_month_day(year{2018},month{1},day{17}));
-    Fionn.push_back(year_month_day(year{2018},month{1},day{18}));
-    dataOneDate tfionn = d.getMax(Fionn);
-    tfionn.exportMap("XWS_FionnDavid","WS");
+        std::vector<year_month_day> Fionn;
+        Fionn.push_back(year_month_day(year{2018},month{1},day{16}));
+        Fionn.push_back(year_month_day(year{2018},month{1},day{17}));
+        Fionn.push_back(year_month_day(year{2018},month{1},day{18}));
+        dataOneDate tfionn = d.getMax(Fionn);
+        tfionn.exportMap("XWS_FionnDavid","WS");
+    }
 
     if (0){
 
@@ -260,23 +277,45 @@ void processIRMData(){
         }
     }
     // 2021 08 13 moy trentenaire pour R et Température
-    if(0){
+    if(1){
         // carte annuelle:
-        dataOneDate da= d.dataAnnuel(year{1});
-        //da.exportMap("R_30aire","R");
+        //dataOneDate da= d.dataAnnuel(year{1});
+        //da.exportMap("P_30aire","P");
+        /*da.exportMap("R_30aire","R");
         da.exportMap("Tmean_30aire","Tmean");
         da.exportMap("Tmax_30aire","Tmax");
         da.exportMap("Tmin_30aire","Tmin");
+        */
 
         for (int m : {1,2,3,4,5,6,7,8,9,10,11,12}){
             std::cout << " calcul valeur mensuelles trentenaire "<< std::endl;
-
             dataOneDate mens=d.dataMensuel(year{1},month{m});
-            mens.exportMap("R_30aire_"+std::to_string(m),"R");
+            /*mens.exportMap("R_30aire_"+std::to_string(m),"R");
             mens.exportMap("Tmin_30aire_"+std::to_string(m),"Tmin");
             mens.exportMap("Tmax_30aire_"+std::to_string(m),"Tmax");
             mens.exportMap("Tmean_30aire_"+std::to_string(m),"Tmean");
-            //mens.exportMap("P_30aire_"+std::to_string(m),"P");
+            mens.exportMap("P_30aire_"+std::to_string(m),"P");*/
+            mens.exportMap("irmTmean_"+std::to_string(m),"Tmean");
+            mens.exportMap("irmTmax_"+std::to_string(m),"Tmax");
+            mens.exportMap("irmTmin_"+std::to_string(m),"Tmin");
+            mens.exportMap("irmTminMin_"+std::to_string(m),"TminMin");
+           // mens.exportMap("irmP_"+std::to_string(m),"P");
+        }
+    }
+
+    if(0){
+        // carte annuelle:
+        dataOneDate da= d.dataAnnuel(year{2018});
+        //da.exportMap("P_2018","P");
+        int y=2018;
+        for (int m : {1,2,3,4,5,6,7,8,9,10,11,12}){
+            std::cout << " calcul valeur mensuelles "<< std::endl;
+            dataOneDate mens=d.dataMensuel(year{2018},month{m});
+            mens.exportMap("irmTmean_"+std::to_string(y)+"_"+std::to_string(m),"Tmean");
+            mens.exportMap("irmTmax_"+std::to_string(y)+"_"+std::to_string(m),"Tmax");
+            mens.exportMap("irmTmin_"+std::to_string(y)+"_"+std::to_string(m),"Tmin");
+            mens.exportMap("irmTminMin_"+std::to_string(y)+"_"+std::to_string(m),"TminMin");
+            mens.exportMap("irmP_"+std::to_string(y)+"_"+std::to_string(m),"P");
         }
     }
 
@@ -314,10 +353,58 @@ void processECADData(){
     ecadData d;
 
     std::vector<int> y{2018};
-    d.calculCarteMensuel(y,"tg");
-    /*d.calculCarteMensuel(y,"rr");
-    d.calculCarteMensuelTrentenaire(year{1991},year{2020}, "tg");
-    d.calculCarteMensuelTrentenaire(year{1991},year{2020}, "rr");*/
+    //d.calculCarteMensuel(y,"tg");
+    //d.calculCarteMensuel(y,"tn");
+    //d.calculCarteMensuel(y,"tx");
+    //d.calculCarteMensuel(y,"rr");
+    //d.calculCarteMensuelTrentenaire(year{1991},year{2020}, "tn");
+    //d.calculCarteMensuelTrentenaire(year{1991},year{2020}, "tx",resumeMensuel::max);
+
+
+    //d.calculCarteMensuelTrentenaire(year{1991},year{2020}, "tg");
+    //d.calculCarteMensuelTrentenaire(year{1986},year{2005}, "rr",resumeMensuel::sum,"fee");
+    d.calculCarteMensuelTrentenaire(year{2012},year{2019}, "rr",resumeMensuel::sum,"ecad22");
+    // il manque un mois en 2011 et en 2020 il n'y a pas toute l'année.
+
+    // je remarque que les valeurs de précipitations ne concordent pas entre ecad et IRM, et je constate que antérieuremnet à 2003, il n'y avais que 2 stations en Ardenne (Mt Rigi et St Hubert).
+    // ca pourrais expliquer les différences constatées, mais malheureusement même en traitant les données postérieures à 2003, les précipitations semblent clairement sous-estimée en Ardenne.
+    // test moyenne précipitation sur une période plus récente
+
+    //d.calculCarteMensuelTrentenaire(year{2003},year{2020}, "rr",resumeMensuel::sum,"dense");
+    // pour le diagramme Walter & Lieth climatic diagram, j'ai besoin de la température minimum absolue également
+    //d.calculCarteMensuel(y,"tn",resumeMensuel::min);
+    //d.calculCarteMensuelTrentenaire(year{1991},year{2020}, "tn",resumeMensuel::min);
 
 }
 
+void processSAFRAN(){
+    int y (2018);
+    // un fichier par année.
+    safranData d(irmDataFile);
+
+    for (int m : {1,2,3,4,5,6,7,8,9,10,11,12}){
+        std::cout << " calcul valeur mensuelles pour " << y << "/" << m << std::endl;
+
+        if(0){
+        dataOneDate mens=d.dataMensuel(year{y},month{m});
+        mens.exportMap("safranTmean_"+std::to_string(y)+"_"+std::to_string(m),"Tmean");
+        mens.exportMap("safranTmax_"+std::to_string(y)+"_"+std::to_string(m),"Tmax");
+        mens.exportMap("safranTmin_"+std::to_string(y)+"_"+std::to_string(m),"Tmin");
+        mens.exportMap("safranTminMin_"+std::to_string(y)+"_"+std::to_string(m),"TminMin");
+        //mens.exportMap("ETP_"+std::to_string(y)+"_"+std::to_string(m),"ETP");
+        mens.exportMap("safranP_"+std::to_string(y)+"_"+std::to_string(m),"P");
+        //mens.exportMap("R_"+std::to_string(y)+"_"+std::to_string(m),"R");
+        }
+        if(1){
+        dataOneDate mens=d.calculCarteMensuelTrentenaire(year{2012},year{2020},month{m});
+        /*mens.exportMap("safranTmean_"+std::to_string(m),"Tmean");
+        mens.exportMap("safranTmax_"+std::to_string(m),"Tmax");
+        mens.exportMap("safranTmin_"+std::to_string(m),"Tmin");
+        mens.exportMap("safranTminMin_"+std::to_string(m),"TminMin");
+        mens.exportMap("safranP_"+std::to_string(m),"P");*/
+         mens.exportMap("safranETP_"+std::to_string(m),"ETP");
+        }
+    }
+
+
+}
