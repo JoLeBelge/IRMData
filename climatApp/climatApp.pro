@@ -26,6 +26,7 @@ SOURCES += \
     ecaddata.cpp \
     irmdata.cpp \
     main.cpp\
+    mar.cpp \
     safrandata.cpp \
     utils.cpp
 
@@ -33,5 +34,6 @@ HEADERS+=\
         date.h\
     ecaddata.h \
     irmdata.h \
+    mar.h \
     safrandata.h \
     utils.h

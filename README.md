@@ -17,7 +17,15 @@ cd netcdf-cxx-4.2
 make 
 sudo make install
 
+ou depuis package : sudo apt install libnetcdf-c++4 libnetcdf-cxx-legacy-dev
+
 cloner dépot date aussi.
+
+git submodule init
+git submodule update
+
+
+
 
 
 

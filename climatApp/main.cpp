@@ -4,11 +4,14 @@
 #include "ecaddata.h"
 #include "safrandata.h"
 #include "boost/program_options.hpp"
+#include "../date/include/date/date.h"
+#include "mar.h"
 
+using namespace date;
 namespace po = boost::program_options;
 std::string mBDpath("/home/lisein/Documents/Scolyte/Data/owsf/owsf_scolyte.db");
 
-std::string irmDataFile("/home/lisein/Documents/Scolyte/Data/climat/IRM/pdg1133.csv");
+std::string input("/home/lisein/Documents/Scolyte/Data/climat/IRM/pdg1133.csv");
 
 // il y a dans pdg1147-moyTrentenaire la date jour et mois mais pas année, pas meme structure que l'autre csv de l'IRM
 //std::string irmDataFile("/home/lisein/Documents/Scolyte/Data/climat/IRM/pdg1147-moyTrentenaire.csv");
@@ -59,7 +62,7 @@ int main(int argc, char *argv[])
             ("outils", po::value<int>(), "choix de l'outil à utiliser. 1: calcul carte mensuelle ECAD. 2: export carte une date ECAD. 3: calcul de DJ pour une série de date donnée ECAD. 4 IRM création des cartes mensuelles et autres")
             ("date", po::value< std::string>(), "date pour outil 2. Format yyyy/mm/dd")
             ("accro", po::value< std::string>(), "accro pour carte climatique ; qq, tg, ...")
-            ("inputIRMFile", po::value< std::string>(), "chemin d'accès et nom du fichier csv contenant les données de l'IRM")
+            ("input", po::value< std::string>(), "chemin d'accès et nom du fichier csv contenant les données de l'IRM")
             ("inputIRMRT", po::value< std::string>(), "chemin d'accès et nom du fichier raster contenant les identifiant de chaque pixel= Raster Template")
             ("outDir", po::value< std::string>(), "dossier ou sera écrit les résultats")
             ;
@@ -76,8 +79,8 @@ int main(int argc, char *argv[])
     GDALAllRegister();
     //std::string aInTuile,aInArbre,aOut;
 
-    if (vm.count("inputIRMFile")) {irmDataFile=vm["inputIRMFile"].as<std::string>();
-        std::cout << " je vais utiliser le fichier de donnée IRM " << irmDataFile << std::endl;
+    if (vm.count("input")) {input=vm["input"].as<std::string>();
+        std::cout << " je vais utiliser le fichier de donnée IRM " << input << std::endl;
     }
     if (vm.count("inputIRMRT")) {IRMRasterTemplatepath=vm["inputIRMRT"].as<std::string>();
         std::cout << " je vais utiliser le raster template de l'IRM " << IRMRasterTemplatepath << std::endl;}
@@ -137,7 +140,7 @@ int main(int argc, char *argv[])
 
 
 
-            if (boost::filesystem::exists(irmDataFile)){
+            if (boost::filesystem::exists(input)){
 
                 if (boost::filesystem::exists(IRMRasterTemplatepath)){
 
@@ -145,7 +148,7 @@ int main(int argc, char *argv[])
                 } else {
                     std::cout << " je ne peux rien faire car " << IRMRasterTemplatepath << " n'existe pas..." <<std::endl;}
             } else {
-                std::cout << " je ne peux rien faire car " << irmDataFile << " n'existe pas..." <<std::endl;
+                std::cout << " je ne peux rien faire car " << input << " n'existe pas..." <<std::endl;
             }
             break;
         }
@@ -161,7 +164,15 @@ int main(int argc, char *argv[])
         }
         case 6:{
             std::cout << " test MAR data" << std::endl;
-            setGeoTMAR(irmDataFile);
+            setGeoTMAR(input);
+            break;
+        }
+        case 7:{
+            std::cout << " MAR netcdf : passage de l'horaire au journalier" << std::endl;
+            MAR mar(input);
+            //mar.hourly2daily();
+            // mar.daily2monthly();
+            mar.multiY(1990,2020);
             break;
         }
 
@@ -173,7 +184,7 @@ int main(int argc, char *argv[])
 
 void processIRMData(){
 
-    irmData d(irmDataFile);
+    irmData d(input);
     // donnée de vent
     /*for (int y :{2016,2017,2018,2019,2020,2021}){
         for (int m : {1,2,3,4,5,6,7,8,9,10,11,12}){
@@ -386,7 +397,7 @@ void processECADData(){
 void processSAFRAN(){
     int y (2018);
     // un fichier par année.
-    safranData d(irmDataFile);
+    safranData d(input);
 
     for (int m : {1,2,3,4,5,6,7,8,9,10,11,12}){
         std::cout << " calcul valeur mensuelles pour " << y << "/" << m << std::endl;
