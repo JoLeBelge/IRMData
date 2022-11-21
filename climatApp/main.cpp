@@ -159,6 +159,12 @@ int main(int argc, char *argv[])
             processSAFRAN();
             break;
         }
+        case 6:{
+            std::cout << " test MAR data" << std::endl;
+            setGeoTMAR(irmDataFile);
+            break;
+        }
+
         }
     }
     std::cout << "done" << std::endl;

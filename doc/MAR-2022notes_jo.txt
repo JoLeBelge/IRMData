@@ -1,0 +1,303 @@
+
+
+Je devrais repenser fortement la manière dont j'ai ouvert les netCDF pour l'ECAd: j'ai tout convertit en raster car j'était plus à l'aise, mais ce n'est vraisemblablement pas le truc le plus efficace
+le plus rapide néanmoins, ça oui...
+
+https://gis.stackexchange.com/questions/383749/converting-netcdf-files-to-geo-referenced-geotiff
+
+gdal_translate -of GTiff -a_ullr <top_left_lon> <top_left_lat> <bottom_right_lon> <bottom_right_lat> -a_srs EPSG:4326 input.nc output.tif
+
+gdal_translate -of GTiff NETCDF:"ICE.195001.b01.nc":MBRR test_MBRR.tif 
+
+cdo à l'air pas mal, climate data operator
+sudo apt-get install cdo
+sudo apt install nco
+
+https://code.mpimet.mpg.de/projects/cdo/wiki/Tutorial
+https://code.mpimet.mpg.de/projects/cdo/wiki/Cdo#Documentation
+
+cdo -info ICE.195001.b01.nc
+cdo -griddes ICE.195001.b01.nc
+
+ncdump c'est l'utilitaire basique de netcdf
+ncdump -h ICE.195001.b01.nc
+
+dimensions:
+	TIME = UNLIMITED ; // (744 currently)
+	bnds = 2 ;
+	X21_100 = 80 ;
+	Y21_70 = 50 ;
+	SECTOR = 3 ;
+	ATMLAY = 1 ;
+ et autres info.
+
+
+ cdo vardes ICE.195001.b01.nc
+
+  -1  DATE          Date(YYYY MM DD HH) [YYYYMMDDHH]
+  -2  YYYY          Date(YYYY MM DD HH) [YYYYMMDDHH]
+  -3  MM            Date(YYYY MM DD HH) [YYYYMMDDHH]
+  -4  DD            Date(YYYY MM DD HH) [YYYYMMDDHH]
+  -5  HH            Date(YYYY MM DD HH) [YYYYMMDDHH]
+  -6  MIN           Date(YYYY MM DD HH) [YYYYMMDDHH]
+  -7  LON           Longitude [degrees]
+  -8  LAT           Latitude [degrees]
+  -9  SH            Surface Height [m]
+ -10  SRF           Surface Type [-]
+ -11  SOL           Soil Type [-]
+ -12  SLO           Surface Slope [-]
+ -13  CZ            Cosine of Solar Zenith Angle [-]
+ -14  SAL           Soil Albedo [-]
+ -15  VEG           Vegetation Type Index [-]
+ -16  MSK           Ice Sheet Area [-]
+ -17  FRV           Vegetation Class Coverage [%]
+ -18  ZN3           Snow Pack Height Total [m]
+ -19  MBSF          Snow [mmWE]
+ -20  MBRR          Rain [mmWE]
+ -21  MBCP          Convective precipitation [mmWE]
+ -22  MBRU2         RunOff [mmWE]
+ -23  MBTO          Mass Balance Variation [mmWE]
+ -24  MBM           Only Melting [mmWE]
+ -25  MBRO1         Rainfall (after canopy) [mmWE]
+ -26  MBRO2         Runoff (snow) [mmWE]
+ -27  MBRO3         Rainfall (after snow) [mmWE]
+ -28  MBRO4         RunOff (surf permeability) [mmWE]
+ -29  MBRO5         RunOff (soil saturation) [mmWE]
+ -30  MBRO6         RunOff (soil penetration) [mmWE]
+ -31  MBSN          Sublimation from snow [mmWE]
+ -32  MBSL          Sublimation from soil [mmWE]
+ -33  MBCC          Canopy water content [mmWE]
+ -34  MBSC          Soil water content [mmWE]
+ -35  MBEP          Evaporation (canopy) [mmWE]
+ -36  MBET          Evapotranspiration [mmWE]
+ -37  SLQC          Soil Humidity content [mmWE]
+ -38  MB            Mass Balance [mmWE]
+ -39  UU            x-Wind Speed component [m/s]
+ -40  VV            y-Wind Speed component [m/s]
+ -41  TT            Temperature [C]
+ -42  QQ            Specific Humidity [g/kg]
+ -43  UV            Wind Speed [m/s]
+ -44  RH            Relative Humidity [%]
+ -45  SLP           Sea Level Pressure [hPa]
+ -46  SP            Surface Pressure [hPa]
+ -47  ST2           Surface Temperature [C]
+ -48  SWD           Short Wave Downward [W/m2]
+ -49  LWD           Long  Wave Downward [W/m2]
+ -50  SHF           Sensible Heat Flux [W/m2]
+ -51  LHF           Latent Heat Flux [W/m2]
+ -52  AL2           Albedo [-]
+ -53  COD           Cloud Optical Depth [-]
+ -54  CC            Cloud Cover [-]
+ 
+ Il y a deux grilles, la grille 1 à une taille de 2, donc, je pense qu'elle ne sert plus à rien.
+ La grille 2 c'est le raster géoref
+ 
+ tinync est assez maniable également, et permet de décrire l'architecture du netcdf de manière très lisible je trouve
+ 
+ 
+ cdo outputtab,lon,lat ICE.195001.b01.nc
+ trop de griddes, erreur
+ 
+ cdo selgrid,2 ICE.195001.b01.nc o.nc
+ cdo outputtab,lon,lat o.nc
+ 
+ Generic grid means that the variables have either no grid information or the grid information is not supported in CDO. In both cases horizontal interpolation is not possible with CDO.
+Your netCDF file contains the lon and lat information for the grid in the variables nav_lon and nav_lat. But CDO can't find them because these variables are not assigned to the data variable sst. You can use the following NCO command to add the missing attribute:
+
+ncatted -a coordinates,sst,c,c,"nav_lon nav_lat" sst_data.nc
+
+
+1) je crée une nouvelle grille lon lat que j'assigne à la variable de mon choix
+ncatted -a coordinates,MBRR,c,c,"LON LAT" o.nc
+2) je sélectionne la grille en question. Ce faisant, je ne garde que les variables qui sont associé à cette grille, ici MBRR
+cdo selgrid,2 o.nc o2.nc
+3) export sous forme de table. ressemble à ce que l'IRM me donne.
+cdo outputtab,date,lon,lat,value o2.nc > a.txt
+
+Ok le workflow ci-dessus il fonctionne! reste plus qu'à exporter quelque chose de compact
+
+gdal_translate -of GTiff NETCDF:"o2.nc":MBRR MBRRg_195001LONLAT.tif 
+
+en fait l'option cdo output est nettement plus approprié!!! allez au boulot.
+
+cdo outputf,%8.4g,80 out.nc > MBRRg_195001.txt
+
+Ok ça fonctionne, mais en fait c'est mieux d'avoir directement un export de gdal
+
+0) traitements
+cdo -divdpm -monsum -selname,MBRR ICE.195001.b01.nc out.nc
+1) export
+gdal_translate -of GTiff NETCDF:"out.nc":MBRR MBRRg_195001.tif 
+reste à modifier le src et la rotation qui n'est pas prise dans le geotransform
+
+
+en fait gdal_translate prend les métadonnées de la grille active, donc déjà pas mal de chose, mail il y manque tout de même la rotation et le src
+https://code.mpimet.mpg.de/boards/2/topics/5382
+
+ou alors je change d'abors la grille que je met en lat lon et puis seulement export.
+
+
+un autre post à ce sujet:
+https://stackoverflow.com/questions/67986451/converting-generic-grid-type-to-a-lonlat-gridtype-using-cdo
+cdo griddes o.nc > mygrid
+sed -i "s/generic/lonlat/g" mygrid
+
+Then use CDO to set the grid:
+
+cdo setgrid,mygrid o.nc infile_fixedgrid.nc
+
+ cdo outputtab,lon,lat infile_fixedgrid.nc
+ 
+ --> fonctionne pas! bordel..
+ 
+ 
+ cdo -selname,LON,LAT ICE.195001.b01.nc out.nc
+ 
+ 
+ http://geotiff.maptools.org/proj_list/oblique_stereographic.html
+ 
+ 
+
+
+
+
+ 
+
+ 
+cdo outputf,%8.4g,2 -selindexbox,44,44,24,24 -selname,LON,LAT -seltimestep,1 ICE.195001.b01.nc
+donne
+4.904
+50.48
+
++proj=sterea +lat_0=50.48
+               +lon_0=4.904
+               +k_0=1000
+               +x_0=0
+               +y_0=0
+
+
+ cdo outputf,%8.4g,10 -selname,SECTOR -seltimestep,1 ICE.195001.b01.nc
+ 
+ cdo outputtab,lon,lat,xind,yind -seltimestep,1 o2.nc > lonlat_MARgrid.txt
+ après je dois faire find replace pour avoir un séparateur de colonne qui soit fonctionnel (plusieurs espace au lieu de tab, grr) 
+ 
+ 
+ 
+ gdal_create -of GTiff -ot UInt16 -a_nodata 0 -burn 0 -outsize 54 33 -a_srs "EPSG:31370" -a_ullr 22556 190150 298563 20058.64 r.tif
+ 
+ pt 1,1 en BL72
+ -56237 136271
+pt 80,50 en BL72
+ 409050 154892
+ 
+ gdal_create -of GTiff -ot UInt16 -a_nodata 0 -burn 0 -outsize 80 50 -a_srs "EPSG:31370" r.tif
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ --------------------
+ je veux mettre mes zbio dans un champ. d'abord je fusionne les zbio de GDL avec celle de RW, puis rasterize
+ 
+gdal_rasterize -tr 500 500 -ot Byte -a_nodata 0 -a ZB zbioRWandGDL_BL72.shp zbioRWandGDL_500m.tif
+ gdalwarp -ot Byte -overwrite -tr 1000 1000 -r mode zbioRWandGDL_500m.tif zbioRWandGDL_1km.tif
+
+ puis extract value to point vers la grille de MAR et export de la table d'attribut au format csv
+
+ # création d'un nouvelle variable depuis un tableau
+ 
+cdo griddes ICE.195001.b01.nc > MAR_grid
+je garde que la grille 2
+
+cdo --format nc -input,MAR_grid zbio.nc < ../gis/grilleMAR-ZBIO.csv
+
+
+le nom de la variable s'appelle float var1(time, Y21_70, X21_100) ;
+
+cdo setvar,zbio zbio.nc zbio.nc
+
+ncdump -h zbio.nc
+
+
+gdal_translate -of GTiff NETCDF:zbio.nc":zbio outZbio.tif 
+
+Affichage sous qgis foireux, donc resample pour être sur que c'est bon:
+
+gdalwarp -ot Byte -overwrite -tr 1 1 -r bilinear outZbio.tif zbioGSD1.tif
+
+ 
+Utilisation de la variable pour créer un masque utiliser pour faire des stats juste sur une zbio
+
+https://stackoverflow.com/questions/71275209/how-to-subset-netcdf-variable-by-a-constant-threshold
+
+
+I agree with Adrian Tompkins that the workflow proposed is not overly sensible as any subsetting will throw away the grid info and essentially negate the purpose of using netCDF data in the first place. The work flow proposed would make more sense using dataframes either in R or pandas in Python.
+
+However, if you have to do this in CDO you can use the reducegrid operator which will reduce the netCDF file to grid cells without missing values, as follows (adapated from Adrian Tompkins' answer):
+
+cdo gtc,10 tas.nc mask1.nc 
+# set zeros to missing 
+cdo setctomiss,0 mask1.nc mask2.nc 
+cdo reducegrid,mask2.nc tas.nc tas_subsetted.nc 
+
+cdo gtc,10 new.nc mask_zb10.nc 
+
+voir aussi Conditional select one field dans cdo documentation
+
+
+--création grille IRM pour netcdf
+
+# d'abord je dois changer l'order de mes id pour avoir les memes conventions que netcdf ; ligne après ligne et non pas colonne après colonne co Qgis
+
+select *, ROW_NUMBER() OVER(ORDER BY  ycoord desc, xcoord asc) as newID FROM grilleCompleteWGS84LONLATJoin
+
+ensuite export champ par champ dans des csv différents
+
+cdo --format nc -input,gridIRM grilleIRMLON.nc < grilleIRMCompleteLON.csv
+cdo --format nc -input,gridIRM grilleIRMLAT.nc < grilleIRMCompleteLAT.csv
+cdo --format nc -input,gridIRM grilleIRMSH.nc < grilleIRMCompleteSH.csv
+cdo --format nc -input,gridIRM grilleIRMPixID.nc < grilleIRMCompletePixID.csv
+
+gdal_translate -of GTiff "NETCDF:grilleIRMSH.nc":var1 sh.tif ok ça a l'air d'être bon
+cdo setvar,LON -setcode,1 grilleIRMLON.nc grilleIRMLON.nc
+cdo setvar,LAT -setcode,2 grilleIRMLAT.nc grilleIRMLAT.nc
+cdo setvar,SH -setcode,3 grilleIRMSH.nc grilleIRMSH.nc
+cdo setvar,ID -setcode,4 grilleIRMPixID.nc grilleIRMPixID.nc
+
+cdo merge grilleIRMLON.nc grilleIRMLAT.nc grilleIRMSH.nc grilleIRMPixID.nc grilleIRM.nc
+
+# je recommence avec 10 pixels de plus, pour englober le GDL
+
+cdo --format nc -input,gridIRMGDL grilleIRMGDLLON.nc < grilleIRMGDLCompleteLON.csv
+cdo --format nc -input,gridIRMGDL grilleIRMGDLLAT.nc < grilleIRMGDLCompleteLAT.csv
+cdo --format nc -input,gridIRMGDL grilleIRMGDLSH.nc < grilleIRMGDLCompleteSH.csv
+cdo --format nc -input,gridIRMGDL grilleIRMGDLPixID.nc < grilleIRMGDLCompletePixID.csv
+
+gdal_translate -of GTiff "NETCDF:grilleIRMGDLSH.nc":var1 sh.tif ok ça a l'air d'être bon
+cdo setvar,LON -setcode,1 grilleIRMGDLLON.nc grilleIRMGDLLON.nc
+cdo setvar,LAT -setcode,2 grilleIRMGDLLAT.nc grilleIRMGDLLAT.nc
+cdo setvar,SH -setcode,3 grilleIRMGDLSH.nc grilleIRMGDLSH.nc
+cdo setvar,ID -setcode,4 grilleIRMGDLPixID.nc grilleIRMGDLPixID.nc
+
+cdo merge grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDLSH.nc grilleIRMGDLPixID.nc grilleIRMGDL.nc
+
+
+
+
+
+
+ 
+ 
+
+ 
+ 
