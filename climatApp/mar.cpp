@@ -4,7 +4,7 @@ std::vector vVarsSum={"MBRR","MBRO3","MBET","MBSL", "SHF","LHF"};
 std::vector vVarsGXN={"TT","ST2"};
 std::vector vVarsG={"SLQC"};
 
-MAR::MAR(std::string aWd, bool fromDaily): mOutDaily(aWd+"/MAR-daily"),mOutMonthly(aWd+"/MAR-montly"),mWd(aWd),mOutMY(aWd+"/MAR-MultiY")
+MAR::MAR(std::string aWd, std::string aZbioNc, bool fromDaily): mOutDaily(aWd+"/MAR-daily"),mOutMonthly(aWd+"/MAR-monthly"),mWd(aWd),mOutMY(aWd+"/MAR-MultiY"),zbioNc(aZbioNc)
 {
 
     std::cout << "gestion fichiers mar depuis le répertoire " << aWd << std::endl;
@@ -25,7 +25,7 @@ MAR::MAR(std::string aWd, bool fromDaily): mOutDaily(aWd+"/MAR-daily"),mOutMonth
             if (itr->path().filename().extension().string()==".nc"){
 
                 std::string y = s.substr(s.size()-7,4);
-                mBaseName=s.substr(0,s.size()-7);
+                mBaseName=s.substr(0,s.size()-7-7);// -7 pour -hourly
                 std::cout << "année " << y << " fichier " << s << std::endl;
                 std::cout << "baseName" << mBaseName<< std::endl;
                 mYearNcdf.emplace(std::make_pair(std::stoi(y),s));
@@ -136,12 +136,14 @@ void MAR::daily2monthly(){
             //break;
 
         }
-        else {  std::cout << "daily to monthly : pas d'input pour y " << kv.first << std::endl;}
+        else {  std::cout << "daily to monthly : pas d'input pour y " << kv.first << " input " << dailyFile(kv.first) <<  std::endl;}
 
     }
 }
 
 void MAR::multiY(int y1,int y2){
+
+     std::cout << "MAR::multiY" << std::endl;
     std::string aCommand="cdo cat ";
     for (auto kv : mYearNcdf){
         if (kv.first>y1 && kv.first < y2+1){
@@ -156,7 +158,7 @@ void MAR::multiY(int y1,int y2){
     for (auto kv : mYearNcdf){
         if (kv.first>y1 && kv.first < y2+1){
             std::string aIn=dailyFile(kv.first);
-            aCommand += " " + dailyFile(kv.first);
+            aCommand += " -selvar,TTG " + dailyFile(kv.first);
         }
     }
     aCommand += " " + nameMultiY(y1,y2,"daily");
@@ -167,8 +169,34 @@ void MAR::multiY(int y1,int y2){
 void MAR::multiYStat(int y1,int y2){
 
 
+    // bug sur TS de 30 ans. Le faire par petites étapes? par tranches de 10ans? non résoudre le prblem.
+
+    std::string aCommand="cdo -ydaymean "+ nameMultiY(y1,y2,"daily")+" "+ nameMultiY(y1,y2,"ydaymean");
+   // std::string aCommand="";
+    /*int nb=(y2-y1)/5;
+    for (int i(1);i<nb+1;i++){
+        int yinit=y1+5*(i-1);
+        int yfinal=y1+5*i;
+        if (i==nb){yfinal=y2;}
+        // d'abor le cat des netcdf
+        std::string aCommand2="";
+        for (int y(yinit);y<yfinal+1;y++){
+                aCommand2 += " " + dailyFile(y);
+            }
+        aCommand2 += " " + nameMultiY(yinit,yfinal,"daily");
+
+        aCommand2="cdo -ydaymean -selvar,TTG -cat "+ aCommand2 +" "+ nameMultiY(y1,y2,"ydaymeanP"+std::to_string(i));
+        std::cout << "part " << aCommand2 << std::endl;
+        system(aCommand2.c_str());
+        aCommand += " " + nameMultiY(y1,y2,"ydaymeanP"+std::to_string(i));
+
+    }
+    aCommand="cdo -ydaymean -cat "+ aCommand +" "+ nameMultiY(y1,y2,"ydaymean");*/
+    std::cout << aCommand << std::endl;
+    system(aCommand.c_str());
+
     // moyenne trentenaire par mois
-    std::string aCommand="cdo -ymonmean -selname,MBRR,TTG "+ nameMultiY(y1,y2,"monthly")+" "+ nameMultiY(y1,y2,"G");
+    aCommand="cdo -ymonmean -selname,MBRR,TTG "+ nameMultiY(y1,y2,"monthly")+" "+ nameMultiY(y1,y2,"G");
     std::cout << aCommand << std::endl;
     system(aCommand.c_str());
 
@@ -228,7 +256,7 @@ void MAR::multiYStat(int y1,int y2){
    // let VAR2 = (VAR[k=1]*FRV[k=1]+VAR[k=2]*FRV[k=2]+VAR[k=3]*FRV[k=3])/100
    //aCommand="cdo expr,'BHE=MBRO3-MBET-MBSL;' -vertmean -yearsum -selmonth,4/9 -ymonmean -selname,MBRO3,MBET,MBSL "+ nameMultiY(y1,y2,"monthly")+" "+ nameMultiY(y1,y2,"BHE");
 
-   aCommand="cdo -expr,'BHE=BHE/100;' -vertmean -expr,'BHE=MBRO3*FRV-MBET*FRV-MBSL*FRV;' -merge -yearsum -selmonth,4/9 -ymonmean -selname,MBRO3,MBET,MBSL "+ nameMultiY(y1,y2,"monthly")+" -selvar,FRV /home/jo/Documents/climat_MAR/data/ICE.195001.b01.nc "+ nameMultiY(y1,y2,"BHE");
+   aCommand="cdo -expr,'BHE=BHE/100;' -vertmean -expr,'BHE=MBRO3*FRV-MBET*FRV-MBSL*FRV;' -merge -yearsum -selmonth,4/9 -ymonmean -selname,MBRO3,MBET,MBSL "+ nameMultiY(y1,y2,"monthly")+" -selvar,FRV "+ mWd+"/"+mYearNcdf.begin()->second +" "+  nameMultiY(y1,y2,"BHE");
 
    std::cout << aCommand << std::endl;
    system(aCommand.c_str());
@@ -237,34 +265,46 @@ void MAR::multiYStat(int y1,int y2){
     system(aCommand.c_str());
    setGeoTMAR(nameRastMultiY(y1,y2,"BHE"));
 
+   // growing season length
+   aCommand="cdo -setvar,GSL -eca_gsl,6,8 -expr,'TG=TTG+274.15;' -vertmean -selvar,TTG "+nameMultiY(y1,y2,"ydaymean") +" -gec,0 "+zbioNc + " "+ nameMultiY(y1,y2,"GSL");
+   std::cout << aCommand << std::endl;
+   system(aCommand.c_str());
+   aCommand="gdal_translate -of GTiff NETCDF:'"+ nameMultiY(y1,y2,"GSL")+"':GSL "+ nameRastMultiY(y1,y2,"GSL");
+   std::cout << aCommand << std::endl;
+    system(aCommand.c_str());
+   setGeoTMAR(nameRastMultiY(y1,y2,"GSL"));
+
     // création du tableau
-   std::string aTable(mOutMY+"/table1990-2020ZBIO.csv");
-   std::string zbioNc("/home/jo/app/climat/doc/zbio_MAR-SOP.nc");
-   std::string delimCmd("echo ';' >>"+aTable);
-    aCommand="echo 'ZBIO;MBRR;TTG;TTX;TTN;m4_7MBRR;BHE\n' >> "+aTable;
-    system(aCommand.c_str());
-   for (int zbio : {1,2,10}){
-    aCommand="echo '"+std::to_string(zbio)+";' >> "+aTable;
-    system(aCommand.c_str());
-    aCommand="cdo -outputf,%8.6g,80 -fldmean -ifthen -eqc,"+std::to_string(zbio)+ " "+ zbioNc+ " "+nameMultiY(y1,y2,"MBRRS") + " >> " +aTable;
-    system(aCommand.c_str());
-    system(delimCmd.c_str());
-    aCommand="cdo -outputf,%8.6g,80 -fldmean -ifthen -eqc,"+std::to_string(zbio)+ " "+ zbioNc+ " "+nameMultiY(y1,y2,"TTG") + " >> " +aTable;
-    system(aCommand.c_str());
-    system(delimCmd.c_str());
-    aCommand="cdo -outputf,%8.6g,80 -fldmax -ifthen -eqc,"+std::to_string(zbio)+ " "+ zbioNc+ " "+nameMultiY(y1,y2,"TTX") + " >> " +aTable;
-    system(aCommand.c_str());
-    system(delimCmd.c_str());
-    aCommand="cdo -outputf,%8.6g,80 -fldmin -ifthen -eqc,"+std::to_string(zbio)+ " "+ zbioNc+ " "+nameMultiY(y1,y2,"TTN") + " >> " +aTable;
-    system(aCommand.c_str());
-    system(delimCmd.c_str());
-    aCommand="cdo -outputf,%8.6g,80 -fldmean -ifthen -eqc,"+std::to_string(zbio)+ " "+ zbioNc+ " "+nameMultiY(y1,y2,"m4_7MBRRS") + " >> " +aTable;
-    system(aCommand.c_str());
-    system(delimCmd.c_str());
-    aCommand="cdo -outputf,%8.6g,80 -fldmean -ifthen -eqc,"+std::to_string(zbio)+ " "+ zbioNc+ " "+nameMultiY(y1,y2,"BHE") + " >> " +aTable;
-    system(aCommand.c_str());
-    aCommand="echo '\n' >> "+aTable;
-     system(aCommand.c_str());
+   std::string aTable(mOutMY+"/table"+std::to_string(y1)+"-"+std::to_string(y2)+"ZBIO.csv");
+
+   std::ofstream ofs (aTable, std::ofstream::out);
+    ofs << "ZBIO;MBRR;TTG;TTX;TTN;m4_7MBRR;BHE;GSL(6,8)\n";
+   // system(aCommand.c_str());
+    std::vector<std::string> vZbio={"HA et HCO", "HA", "HCO", "BMA","Oesling", "Gutland"};
+   int j(0);
+   for (std::string zbio : {"mask=(zbio==10)?1:(zbio==1);","mask=zbio==10;","mask=zbio==1;","mask=zbio==2;","mask=(zbio==11)+(zbio==12)+(zbio==13);","mask=(zbio==14)+(zbio==15)+(zbio==16)+(zbio==17);"}){
+
+   // ofs <<std::to_string(zbio) << ";";
+    //ofs <<"'"<<zbio << "';";
+    ofs <<vZbio.at(j) << ";";
+    aCommand="cdo -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"MBRRS") ;//+ " >> " +aTable;
+    ofs <<exec(aCommand.c_str()) << ";";
+    aCommand="cdo  -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TTG") ;
+    ofs <<exec(aCommand.c_str()) << ";";
+    aCommand="cdo -s -outputf,%8.6g,80 -fldmax -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TTX") ;
+    ofs <<exec(aCommand.c_str()) << ";";
+    aCommand="cdo -s -outputf,%8.6g,80 -fldmin -ifthen --expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TTN") ;
+    std::cout << aCommand << std::endl;
+    ofs <<exec(aCommand.c_str()) << ";";
+    aCommand="cdo -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"m4_7MBRRS") ;
+    ofs <<exec(aCommand.c_str()) << ";";
+    aCommand="cdo -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"BHE") ;
+    ofs <<exec(aCommand.c_str()) << ";";
+    // plusieur date parfois dans le netcdf, je prend la dernière 1990-12-31
+    aCommand="cdo -s -outputf,%8.6g,80 -selvar,GSL -seldate,"+std::to_string(y2)+"-12-31 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"GSL") ;
+    //std::cout << aCommand << std::endl;
+    ofs <<exec(aCommand.c_str()) << "\n";
+    j++;
    }
 }
 
@@ -279,4 +319,24 @@ std::string MAR::nameMultiY(int y1,int y2, std::string post){
 }
 std::string MAR::nameRastMultiY(int y1,int y2, std::string post){
     return mOutMY+"/raster/"+mBaseName+std::to_string(y1)+"-"+ std::to_string(y2)+post+".tif";
+}
+
+
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    if (result.find('.')!=std::string::npos){
+    //std::cout <<" result " <<  result << "\n\n" << std::endl;
+        std::string r=result.substr(1,result.find('.'))+ result.substr(result.find('.')+1,2);
+    if (result.find('-')!=std::string::npos && r.find('-')==std::string::npos){r="-"+r;}
+    return  r;
+    }
+    else {return result;}
 }

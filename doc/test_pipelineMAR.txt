@@ -56,3 +56,35 @@ gdal_translate -of GTiff NETCDF:"MAR-MultiY/MARv3.12.2-ERA5-1990-2020GSL.nc":the
 /home/jo/app/climat/build-climatApp/climatApp --outils 6 --input "/home/jo/Documents/climat_MAR/data/MAR-MultiY/raster/MARv3.12.2-ERA5-1990-2020GSL.tif"
 MAR-MultiY/MARv3.12.2-ERA5-1990-2020GSL.nc
 
+
+cdo -setvar,GSL -eca_gsl,6,8 -expr,'TG=TTG+274.15;' -vertmean -selvar,TTG /media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse//MAR-MultiY/MARv3.12.2-ERA5-1980-2010daily.nc -gec,0 /home/gef/app/climat/doc/zbio_MAR-SOP.nc /media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse//MAR-MultiY/MARv3.12.2-ERA5-1980-2010GSL.nc
+
+#compilation de cdo pour avoir support hdf5
+car ma version actuelle me retourne
+cdo -V
+hdf5 library version : library undefined
+et le ydaymean as l'air d'avoir besoin de cette librairie.
+téléchargement cdo 2.1
+sudo apt install libhdf5-cpp-103
+
+
+./configure --enable-netcdf4 --enable-zlib --with-netcdf=yes --with-hdf5=yes
+
+fonctionne pas...
+
+https://gist.github.com/jeffbyrnes/e56d294c216fbd30fd2fd32e576db81c
+
+--with-netcdf=yes --with-hdf5=yes
+
+sudo apt install libhdf5-*
+
+car il y en a plein...
+
+bof. peut-être essayer sur une série tempo plus petite? oui sur deux ans ça fonctionne.. tenter 10 ans??
+
+cdo cat MAR-daily/MARv3.12.2-ERA5-daily-1980.nc MAR-daily/MARv3.12.2-ERA5-daily-1981.nc test/test.nc 
+
+oui ça fonctionne sur les plus petits fichiers.. mais bon ça m'arrange pas.
+
+
+

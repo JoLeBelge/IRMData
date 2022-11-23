@@ -3,7 +3,7 @@ std::vector<int> vYears={2016,2017,2018,2019,2020}; // pour les données IRM j'a
 std::vector<int> vMonths={3,4,5,6,7,8,9};
 
 extern double baseDJ;
-extern std::string IRMRasterTemplatepath;
+extern std::string input2;
 extern std::string pathOut;
 // la colonne dans laquelle est stoqué l'info - varie d'un fichier à un autre.
 int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0), colWS(0),colP2(0);
@@ -315,7 +315,7 @@ void dataOneDate::exportMap(std::string aOut,std::string aVar){
     const char *pszFormat = "GTiff";
     GDALDriver *pDriver= GetGDALDriverManager()->GetDriverByName(pszFormat);
 
-    GDALDataset * temp=(GDALDataset *) GDALOpen( IRMRasterTemplatepath.c_str(), GA_ReadOnly );
+    GDALDataset * temp=(GDALDataset *) GDALOpen( input2.c_str(), GA_ReadOnly );
     std::string out=pathOut+"/"+aOut+".tif";
     const char * ch=out.c_str();
 

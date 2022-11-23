@@ -16,7 +16,7 @@ std::string input("/home/lisein/Documents/Scolyte/Data/climat/IRM/pdg1133.csv");
 // il y a dans pdg1147-moyTrentenaire la date jour et mois mais pas année, pas meme structure que l'autre csv de l'IRM
 //std::string irmDataFile("/home/lisein/Documents/Scolyte/Data/climat/IRM/pdg1147-moyTrentenaire.csv");
 // ça c'est le chemin d'accès vers le raster "template" de l'IRM qui contient pour chaque pixel le numéro identifiant du pixel.
-std::string IRMRasterTemplatepath("/home/lisein/Documents/Scolyte/Data/climat/IRM/pixel_id.tif");
+std::string input2("/home/lisein/Documents/Scolyte/Data/climat/IRM/pixel_id.tif");
 // dossier ou l'on va sauver tout nos résultats
 std::string pathOut("/home/lisein/Documents/Scolyte/Data/climat/IRM/irmCarte/");
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
             ("date", po::value< std::string>(), "date pour outil 2. Format yyyy/mm/dd")
             ("accro", po::value< std::string>(), "accro pour carte climatique ; qq, tg, ...")
             ("input", po::value< std::string>(), "chemin d'accès et nom du fichier csv contenant les données de l'IRM")
-            ("inputIRMRT", po::value< std::string>(), "chemin d'accès et nom du fichier raster contenant les identifiant de chaque pixel= Raster Template")
+            ("input2", po::value< std::string>(), "chemin d'accès et nom du fichier raster contenant les identifiant de chaque pixel= Raster Template")
             ("outDir", po::value< std::string>(), "dossier ou sera écrit les résultats")
             ;
 
@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
     if (vm.count("input")) {input=vm["input"].as<std::string>();
         std::cout << " je vais utiliser le fichier de donnée IRM " << input << std::endl;
     }
-    if (vm.count("inputIRMRT")) {IRMRasterTemplatepath=vm["inputIRMRT"].as<std::string>();
-        std::cout << " je vais utiliser le raster template de l'IRM " << IRMRasterTemplatepath << std::endl;}
+    if (vm.count("input2")) {input2=vm["input2"].as<std::string>();
+        std::cout << " je vais utiliser le raster template de l'IRM " << input2 << std::endl;}
     if (vm.count("outDir")) {pathOut=vm["outDir"].as<std::string>();
     std::cout << " j'écrirai les résutats dans le dossier " << pathOut << std::endl;}
 
@@ -142,11 +142,11 @@ int main(int argc, char *argv[])
 
             if (boost::filesystem::exists(input)){
 
-                if (boost::filesystem::exists(IRMRasterTemplatepath)){
+                if (boost::filesystem::exists(input2)){
 
                     processIRMData();
                 } else {
-                    std::cout << " je ne peux rien faire car " << IRMRasterTemplatepath << " n'existe pas..." <<std::endl;}
+                    std::cout << " je ne peux rien faire car " << input2 << " n'existe pas..." <<std::endl;}
             } else {
                 std::cout << " je ne peux rien faire car " << input << " n'existe pas..." <<std::endl;
             }
@@ -169,12 +169,19 @@ int main(int argc, char *argv[])
         }
         case 7:{
             std::cout << " MAR netcdf : passage de l'horaire au journalier" << std::endl;
-            MAR mar(input,1);
+            MAR mar(input,input2,0);
             //mar.hourly2daily();
-            // mar.daily2monthly();
+            //mar.daily2monthly();
             //mar.multiY(1990,2020);
-
             mar.multiYStat(1990,2020);
+
+            //mar.multiY(1980,2010);
+            mar.multiYStat(1980,2010);
+
+            //mar.multiY(2010,2020);
+            mar.multiYStat(2010,2020);
+
+
             break;
         }
 

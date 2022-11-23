@@ -12,6 +12,7 @@
 #include <gdalwarper.h>
 #include "ogr_spatialref.h"
 #include <string>
+#include "boost/filesystem.hpp"
 
 namespace qi = boost::spirit::qi;
 

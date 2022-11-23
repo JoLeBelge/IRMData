@@ -40,8 +40,12 @@ void setGeoTMAR(std::string aRasterIn){
                  "prend en input le résultat de :  gdal_translate -of GTiff NETCDF:'MAR.nc':var1 var1_MAR.tif\n" << std::endl;
 
     GDALAllRegister();
+
+    if (boost::filesystem::exists(aRasterIn)){
+
     const char *inputPath=aRasterIn.c_str();
     GDALDataset *pInputRaster = (GDALDataset*) GDALOpen(inputPath, GA_Update);
+
 
     double transform[6], tr[6];
 
@@ -83,4 +87,8 @@ void setGeoTMAR(std::string aRasterIn){
     oSRS.importFromProj4(proj4.c_str());
     pInputRaster->SetSpatialRef(&oSRS);
     GDALClose(pInputRaster);
+    } else {
+
+        std::cout << " setGeoTMAR : input n'existe pas " << aRasterIn << std::endl;
+    }
 }

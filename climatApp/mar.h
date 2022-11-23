@@ -7,11 +7,18 @@
 #include <vector>
 #include "utils.h"
 
+#include <cstdio>
+#include <memory>
+#include <stdexcept>
+#include <array>
+
+std::string exec(const char* cmd);
+
 // une classe pour passer de l'horaire à du journalier puis du mensuel
 class MAR
 {
 public:
-    MAR(std::string aWd, bool fromDaily=0);
+    MAR(std::string aWd, std::string aZbioNc, bool fromDaily=0);
 
     void hourly2daily();
     void daily2monthly();
@@ -22,7 +29,7 @@ public:
     std::string dailyFile(int y);
     std::string monthlyFile(int y);
     std::map<int,std::string> mYearNcdf;
-    std::string mOutDaily,mOutMonthly,mOutMY,mWd, mBaseName;
+    std::string mOutDaily,mOutMonthly,mOutMY,mWd, mBaseName, zbioNc;
 
     //MY = multi-year
 };
