@@ -23,18 +23,36 @@ cdo -ydaymean -selname,MBRR,TTG MAR-MultiY/MARv3.12.2-ERA5-1990-2020daily.nc MAR
 
 # j'intègre le tableau zbio pour faire des sélections
 
-cdo  -merge MAR-MultiY/MARv3.12.2-ERA5-1990-2020G.nc /home/gef/app/climat/doc/zbio_MAR-SOP.nc 
+cdo -merge MAR-MultiY/MARv3.12.2-ERA5-1990-2020G.nc /home/gef/app/climat/doc/zbio_MAR-SOP.nc 
 
 cdo eqc,10 /home/gef/app/climat/doc/zbio_MAR-SOP.nc Mask/zbio-10.nc
 
 
-#fonctionne!! et je peux sortir la valeur avec outputf
+#fonctionne!! et je peux sortir la valeur avec outputf. mais je dois faire le raster aussi, ça sera utile.
 
 cdo -outputf,%8.6g,80 -fldmean -yearsum -ifthen -eqc,2 /home/gef/app/climat/doc/zbio_MAR-SOP.nc -selname,MBRR MAR-MultiY/MARv3.12.2-ERA5-1990-2020G.nc
 
 
 
-
-
-
 cdo -yearsum MAR-MultiY/MARv3.12.2-ERA5-1990-2020G.nc MAR-MultiY/MARv3.12.2-ERA5-1990-2020G.nc
+
+// bilan hydrique ; je dois moyenné les 3 classe de végétation
+// je fait un visuel de FRV ; 
+gdal_translate -of GTiff NETCDF:"ICE.195001.b01.nc":FRV FRV.tif 
+ ./climatApp --outils 6 --input "/home/jo/Documents/climat_MAR/data/FRV.tif"
+
+
+cdo -expr,'BHE=BHE/100;' -vertmean -expr,'BHE=MBRO3*FRV-MBET*FRV-MBSL*FRV;' -merge -yearsum -selmonth,4/9 -ymonmean -selname,MBRO3,MBET,MBSL /home/jo/Documents/climat_MAR/data/MAR-MultiY/MARv3.12.2-ERA5-1990-2020monthly.nc -selvar,FRV /home/jo/Documents/climat_MAR/data/ICE.195001.b01.nc /home/jo/Documents/climat_MAR/data/MAR-MultiY/MARv3.12.2-ERA5-1990-2020BHE.nc
+
+Ok, longueur période de végétation
+
+
+cdo gec,1 /home/jo/app/climat/doc/zbio_MAR-SOP.nc maskZBIO.nc
+
+cdo eca_gsl,6,5 -selvar,TTG MAR-MultiY/MARv3.12.2-ERA5-1990-2020daily.nc maskZBIO.nc MAR-MultiY/MARv3.12.2-ERA5-1990-2020GSL.nc
+
+# tentons de comprendre la structure du résultat
+gdal_translate -of GTiff NETCDF:"MAR-MultiY/MARv3.12.2-ERA5-1990-2020GSL.nc":thermal_growing_season_length MAR-MultiY/raster/MARv3.12.2-ERA5-1990-2020GSL.tif 
+/home/jo/app/climat/build-climatApp/climatApp --outils 6 --input "/home/jo/Documents/climat_MAR/data/MAR-MultiY/raster/MARv3.12.2-ERA5-1990-2020GSL.tif"
+MAR-MultiY/MARv3.12.2-ERA5-1990-2020GSL.nc
+

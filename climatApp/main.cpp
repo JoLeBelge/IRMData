@@ -169,10 +169,12 @@ int main(int argc, char *argv[])
         }
         case 7:{
             std::cout << " MAR netcdf : passage de l'horaire au journalier" << std::endl;
-            MAR mar(input);
+            MAR mar(input,1);
             //mar.hourly2daily();
             // mar.daily2monthly();
-            mar.multiY(1990,2020);
+            //mar.multiY(1990,2020);
+
+            mar.multiYStat(1990,2020);
             break;
         }
 
