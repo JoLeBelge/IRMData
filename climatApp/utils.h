@@ -21,5 +21,7 @@ std::vector<std::vector<std::string>> parseCSV2V(std::string aFileIn, char aDeli
 
 void setGeoTMAR(std::string aRasterIn);
 
+void exportRaster(std::string aNetCdfIn, std::string aRasterOut);
+
 
 #endif // UTILS_H

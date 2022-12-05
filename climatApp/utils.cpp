@@ -92,3 +92,10 @@ void setGeoTMAR(std::string aRasterIn){
         std::cout << " setGeoTMAR : input n'existe pas " << aRasterIn << std::endl;
     }
 }
+
+void exportRaster(std::string aNetCdfIn, std::string aRasterOut){
+    std::string aCommand="gdal_translate -of GTiff NETCDF:'"+ aNetCdfIn+" "+ aRasterOut;
+    std::cout << aCommand << std::endl;
+    system(aCommand.c_str());
+    setGeoTMAR(aRasterOut);
+}

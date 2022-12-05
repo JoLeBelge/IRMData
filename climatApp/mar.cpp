@@ -11,16 +11,15 @@ MAR::MAR(std::string aWd, std::string aZbioNc, bool fromDaily): mOutDaily(aWd+"/
     if(!boost::filesystem::exists(mOutDaily)){boost::filesystem::create_directory(mOutDaily);}
     if(!boost::filesystem::exists(mOutMonthly)){boost::filesystem::create_directory(mOutMonthly);}
     if(!boost::filesystem::exists(mOutMY)){boost::filesystem::create_directory(mOutMY);}
-
     if(!boost::filesystem::exists(mOutMY+"/raster")){boost::filesystem::create_directory(mOutMY+"/raster");}
-
-
 
     boost::filesystem::directory_iterator end_itr;
 
     if (!fromDaily){
         for (boost::filesystem::directory_iterator itr(aWd); itr != end_itr; ++itr)
         {
+
+            // création depuis les fichiers hourly
             std::string s=itr->path().filename().string();
             if (itr->path().filename().extension().string()==".nc"){
 
@@ -129,6 +128,11 @@ void MAR::daily2monthly(){
                 aCommand+= "-monmax  -selname,"+var+"X "+aIn+" ";
                 aCommand+= "-monmin  -selname,"+var+"N "+aIn+" ";
             }
+
+            for (std::string var : vVarsG){
+                aCommand+= "-monmean -selname,"+var+" "+aIn +" ";
+            }
+
             aCommand += monthlyFile(kv.first);
 
             std::cout << aCommand << std::endl;
@@ -145,18 +149,23 @@ void MAR::multiY(int y1,int y2){
 
      std::cout << "MAR::multiY" << std::endl;
     std::string aCommand="cdo cat ";
+    int nbY(0);
     for (auto kv : mYearNcdf){
-        if (kv.first>y1 && kv.first < y2+1){
+        if (kv.first>y1-1 && kv.first < y2+1){
             std::string aIn=monthlyFile(kv.first);
             aCommand += " " + monthlyFile(kv.first);
+            nbY++;
         }
     }
+    std::cout << " nombre d'années : " << std::to_string(nbY) << std::endl;
     aCommand += " " + nameMultiY(y1,y2,"monthly");
     std::cout << aCommand << std::endl;
     system(aCommand.c_str());
+
+    // pour le moment, juste pour TTG car sinon fait des fichiers trop volumineux qui font bugger cdo ydaymean, en tout cas si période = trentenaire
     aCommand="cdo cat ";
     for (auto kv : mYearNcdf){
-        if (kv.first>y1 && kv.first < y2+1){
+        if (kv.first>y1-1 && kv.first < y2+1){
             std::string aIn=dailyFile(kv.first);
             aCommand += " -selvar,TTG " + dailyFile(kv.first);
         }
@@ -168,30 +177,8 @@ void MAR::multiY(int y1,int y2){
 
 void MAR::multiYStat(int y1,int y2){
 
-
-    // bug sur TS de 30 ans. Le faire par petites étapes? par tranches de 10ans? non résoudre le prblem.
-
+    // bug sur TS de 30 ans. Le faire par petites étapes? par tranches de 10ans? non résoudre le prblem, en gardant la taille des fichiers pas trop élevée (moins de variables dedans)
     std::string aCommand="cdo -ydaymean "+ nameMultiY(y1,y2,"daily")+" "+ nameMultiY(y1,y2,"ydaymean");
-   // std::string aCommand="";
-    /*int nb=(y2-y1)/5;
-    for (int i(1);i<nb+1;i++){
-        int yinit=y1+5*(i-1);
-        int yfinal=y1+5*i;
-        if (i==nb){yfinal=y2;}
-        // d'abor le cat des netcdf
-        std::string aCommand2="";
-        for (int y(yinit);y<yfinal+1;y++){
-                aCommand2 += " " + dailyFile(y);
-            }
-        aCommand2 += " " + nameMultiY(yinit,yfinal,"daily");
-
-        aCommand2="cdo -ydaymean -selvar,TTG -cat "+ aCommand2 +" "+ nameMultiY(y1,y2,"ydaymeanP"+std::to_string(i));
-        std::cout << "part " << aCommand2 << std::endl;
-        system(aCommand2.c_str());
-        aCommand += " " + nameMultiY(y1,y2,"ydaymeanP"+std::to_string(i));
-
-    }
-    aCommand="cdo -ydaymean -cat "+ aCommand +" "+ nameMultiY(y1,y2,"ydaymean");*/
     std::cout << aCommand << std::endl;
     system(aCommand.c_str());
 
@@ -205,22 +192,13 @@ void MAR::multiYStat(int y1,int y2){
     std::cout << aCommand << std::endl;
     system(aCommand.c_str());
 
-    // export au format raster
-    aCommand="gdal_translate -of GTiff NETCDF:'"+ nameMultiY(y1,y2,"MBRRS")+"':MBRR "+ nameRastMultiY(y1,y2,"MBRRS");
-    std::cout << aCommand << std::endl;
-    system(aCommand.c_str());
-    setGeoTMAR(nameRastMultiY(y1,y2,"MBRRS"));
+    exportRaster(nameMultiY(y1,y2,"MBRRS")+"':MBRR",nameRastMultiY(y1,y2,"MBRRS"));
 
     // moyenne sur l'année
     aCommand="cdo -yearmean -selvar,TTG " + nameMultiY(y1,y2,"G") + " " + nameMultiY(y1,y2,"TTG");
     std::cout << aCommand << std::endl;
     system(aCommand.c_str());
-
-    // export au format raster
-    aCommand="gdal_translate -of GTiff NETCDF:'"+ nameMultiY(y1,y2,"TTG")+"':TTG "+ nameRastMultiY(y1,y2,"TTG");
-    std::cout << aCommand << std::endl;
-    system(aCommand.c_str());
-    setGeoTMAR(nameRastMultiY(y1,y2,"TTG"));
+    exportRaster(nameMultiY(y1,y2,"TTG")+"':TTG",nameRastMultiY(y1,y2,"TTG"));
 
     // min et max pour TT
     aCommand="cdo -yearmin -ymonmin -selname,TTN "+ nameMultiY(y1,y2,"monthly")+" "+ nameMultiY(y1,y2,"TTN");
@@ -230,14 +208,8 @@ void MAR::multiYStat(int y1,int y2){
     std::cout << aCommand << std::endl;
     system(aCommand.c_str());
 
-    aCommand="gdal_translate -of GTiff NETCDF:'"+ nameMultiY(y1,y2,"TTX")+"':TTX "+ nameRastMultiY(y1,y2,"TTX");
-    std::cout << aCommand << std::endl;
-    system(aCommand.c_str());
-    setGeoTMAR(nameRastMultiY(y1,y2,"TTX"));
-    aCommand="gdal_translate -of GTiff NETCDF:'"+ nameMultiY(y1,y2,"TTN")+"':TTN "+ nameRastMultiY(y1,y2,"TTN");
-    std::cout << aCommand << std::endl;
-    system(aCommand.c_str());
-    setGeoTMAR(nameRastMultiY(y1,y2,"TTN"));
+    exportRaster(nameMultiY(y1,y2,"TTX")+"':TTN",nameRastMultiY(y1,y2,"TTX"));
+    exportRaster(nameMultiY(y1,y2,"TTN")+"':TTN",nameRastMultiY(y1,y2,"TTN"));
 
     // somme des précipitation de avril à septembre
     aCommand="cdo -yearsum -selmonth,4/9 -selvar,MBRR " + nameMultiY(y1,y2,"G") + " " + nameMultiY(y1,y2,"m4_7MBRRS");
@@ -245,10 +217,7 @@ void MAR::multiYStat(int y1,int y2){
     system(aCommand.c_str());
 
     // export au format raster
-    aCommand="gdal_translate -of GTiff NETCDF:'"+ nameMultiY(y1,y2,"m4_7MBRRS")+"':MBRR "+ nameRastMultiY(y1,y2,"m4_7MBRRS");
-    std::cout << aCommand << std::endl;
-    system(aCommand.c_str());
-    setGeoTMAR(nameRastMultiY(y1,y2,"m4_7MBRRS"));
+    exportRaster(nameMultiY(y1,y2,"m4_7MBRRS")+"':MBRR",nameRastMultiY(y1,y2,"m4_7MBRRS"));
 
    // bilan hydrique estival :" MBRO3-MBET-MBSL" je commence avec cette approche car c'est les variables que j'ai sur mon portable
    // par contre pour une des variables j'ai les secteurs à choisir... c'est ce qui est nommé levels par cdo, donc sellevidx -sellevidx,1 ou alors vertmean. mais vu que c'est une moyenne pondérée par classe de végétation je dois utiliser la grille FRV
@@ -260,19 +229,20 @@ void MAR::multiYStat(int y1,int y2){
 
    std::cout << aCommand << std::endl;
    system(aCommand.c_str());
-   aCommand="gdal_translate -of GTiff NETCDF:'"+ nameMultiY(y1,y2,"BHE")+"':BHE "+ nameRastMultiY(y1,y2,"BHE");
+
+   exportRaster(nameMultiY(y1,y2,"BHE")+"':BHE",nameRastMultiY(y1,y2,"BHE"));
+
+   // suivi de l'humidité du sol comme indice de bilan hydrique estival
+   aCommand="cdo -expr,'BHE2=BHE2/100;' -vertmean -expr,'BHE2=SLQC*FRV;' -merge -yearsum -selmonth,4/9 -ymonmean -selname,SLQC "+ nameMultiY(y1,y2,"monthly")+" -selvar,FRV "+ mWd+"/"+mYearNcdf.begin()->second +" "+  nameMultiY(y1,y2,"BHE2");
    std::cout << aCommand << std::endl;
-    system(aCommand.c_str());
-   setGeoTMAR(nameRastMultiY(y1,y2,"BHE"));
+   system(aCommand.c_str());
+   exportRaster(nameMultiY(y1,y2,"BHE2")+"':BHE2",nameRastMultiY(y1,y2,"BHE2"));
 
    // growing season length
    aCommand="cdo -setvar,GSL -eca_gsl,6,8 -expr,'TG=TTG+274.15;' -vertmean -selvar,TTG "+nameMultiY(y1,y2,"ydaymean") +" -gec,0 "+zbioNc + " "+ nameMultiY(y1,y2,"GSL");
    std::cout << aCommand << std::endl;
    system(aCommand.c_str());
-   aCommand="gdal_translate -of GTiff NETCDF:'"+ nameMultiY(y1,y2,"GSL")+"':GSL "+ nameRastMultiY(y1,y2,"GSL");
-   std::cout << aCommand << std::endl;
-    system(aCommand.c_str());
-   setGeoTMAR(nameRastMultiY(y1,y2,"GSL"));
+   exportRaster(nameMultiY(y1,y2,"GSL")+"':GSL",nameRastMultiY(y1,y2,"GSL"));
 
     // création du tableau
    std::string aTable(mOutMY+"/table"+std::to_string(y1)+"-"+std::to_string(y2)+"ZBIO.csv");

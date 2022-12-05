@@ -171,15 +171,15 @@ int main(int argc, char *argv[])
             std::cout << " MAR netcdf : passage de l'horaire au journalier" << std::endl;
             MAR mar(input,input2,0);
             //mar.hourly2daily();
-            //mar.daily2monthly();
+            mar.daily2monthly();
             //mar.multiY(1990,2020);
             mar.multiYStat(1990,2020);
 
             //mar.multiY(1980,2010);
-            mar.multiYStat(1980,2010);
+            //mar.multiYStat(1980,2010);
 
             //mar.multiY(2010,2020);
-            mar.multiYStat(2010,2020);
+            //mar.multiYStat(2010,2020);
 
 
             break;
