@@ -292,6 +292,12 @@ cdo setvar,ID -setcode,4 grilleIRMGDLPixID.nc grilleIRMGDLPixID.nc
 cdo merge grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDLSH.nc grilleIRMGDLPixID.nc grilleIRMGDL.nc
 
 
+cdo --format nc -input,gridIRMGDL grilleIRMGDLZbio.nc < grilleIRMGDLCompleteZbio.csv
+cdo setvar,ZBIO -setcode,5 grilleIRMGDLZbio.nc grilleIRMGDLZbio.nc
+
+cdo merge grilleIRMGDLZbio.nc grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDLSH.nc grilleIRMGDLPixID.nc grilleIRMGDL.nc
+
+
 
 
 
