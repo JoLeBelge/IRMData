@@ -298,12 +298,50 @@ cdo setvar,ZBIO -setcode,5 grilleIRMGDLZbio.nc grilleIRMGDLZbio.nc
 cdo merge grilleIRMGDLZbio.nc grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDLSH.nc grilleIRMGDLPixID.nc grilleIRMGDL.nc
 
 
+# variables des netcdf sur la grille de l'IRM - ne sont pas les mêmes que celles sur la grille rotationnée
 
+  -1  YYYY          Year [-]
+  -2  MM            Month [-]
+  -3  DD            Day [-]
+  -4  HH            Hour [-]
+  -5  MIN           Minute [-]
+  -6  LON           Longitude [degrees]
+  -7  LAT           Latitude [degrees]
+  -8  SH            Surface height (IRM) [m]
+  -9  DIST          Distance to the MAR pixel [km]
+ -10  SH_MAR        Original MAR  5x 5km2 Surface height [m]
+ -11  SQM           Max Soil Humidity content [kg]
+ -12  ZN            Snow Pack Height Total [m]
+ -13  SF            Snowfall [mm/h]
+ -14  RF            Rainfall [mm/h]
+ -15  RU            RunOff [mm/h]
+ -16  SMB           Mass Balance Variation [mm/h]
+ -17  RO1           Rainfall (after canopy) [mm/h]
+ -18  RO2           Runoff (snow) [mm/h]
+ -19  RO3           Rainfall (after snow) [mm/h]
+ -20  RO4           RunOff (surf permeability) [mm/h]
+ -21  RO5           RunOff (soil saturation) [mm/h]
+ -22  RO6           RunOff (soil penetration) [mm/h]
+ -23  SN            Sublimation from snow [mm/h]
+ -24  SL            Sublimation from soil [mm/h]
+ -25  EP            Evaporation (canopy) [mm/h]
+ -26  ET            Evapotranspiration [mm/h]
+ -27  SQC           Soil Humidity content [kg]
+ -28  T2m           2m Temperature [degC]
+ -29  Q2m           2m Specific Humidity [g/kg]
+ -30  U2m           2m Wind Speed [m/2]
+ -31  RH2m          2m Relative Humidity [-]
+ -32  SLP           Sea Level Pressure [hPa]
+ -33  SP            Surface Pressure [hPa]
+ -34  ST            Surface Temperature [degC]
+ -35  U10m          10m Wind Speed [m/s]
+ -36  SWD           Short Wave Downward [w/m2]
+ -37  LWD           Long  Wave Downward [w/m2]
+ -38  SHF           Sensible Heat Flux [w/m2]
+ -39  LHF           Latent Heat Flux [w/m2]
+ -40  CC            Cloud Cover [-]
 
-
-
- 
- 
+pas de chance, le passage de hourly to daily a l'air trop long, code pas compatible. Dommage...
 
  
  

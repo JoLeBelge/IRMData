@@ -14,12 +14,19 @@
 #include <string>
 #include "boost/filesystem.hpp"
 
+// différent moyen d'aggréger les valeurs par mois
+enum typeGrid {SOP
+                    ,irm
+                   };
+
 namespace qi = boost::spirit::qi;
 
 std::vector<std::vector<std::string>> parseCSV2V(std::string aFileIn, char aDelim);
 
 
 void setGeoTMAR(std::string aRasterIn);
+
+void exportRaster(std::string aNetCdfIn, std::string aRasterOut, typeGrid mode);
 
 
 #endif // UTILS_H

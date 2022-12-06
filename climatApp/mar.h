@@ -14,11 +14,13 @@
 
 std::string exec(const char* cmd);
 
+
+
 // une classe pour passer de l'horaire à du journalier puis du mensuel
 class MAR
 {
 public:
-    MAR(std::string aWd, std::string aZbioNc, bool fromDaily=0);
+    MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid=SOP,bool fromDaily=0);
 
     void hourly2daily();
     void daily2monthly();
@@ -30,6 +32,8 @@ public:
     std::string monthlyFile(int y);
     std::map<int,std::string> mYearNcdf;
     std::string mOutDaily,mOutMonthly,mOutMY,mWd, mBaseName, zbioNc;
+
+    typeGrid mTypeGrid;
 
     //MY = multi-year
 };

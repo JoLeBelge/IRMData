@@ -28,6 +28,9 @@ extern std::vector<int> vMonths;
 
 double baseDJ(8.3); // baier
 
+int mode(1);
+typeGrid grid;
+
 void processIRMData();
 void processSAFRAN();
 
@@ -65,6 +68,7 @@ int main(int argc, char *argv[])
             ("input", po::value< std::string>(), "chemin d'accès et nom du fichier csv contenant les données de l'IRM")
             ("input2", po::value< std::string>(), "chemin d'accès et nom du fichier raster contenant les identifiant de chaque pixel= Raster Template")
             ("outDir", po::value< std::string>(), "dossier ou sera écrit les résultats")
+             ("mode", po::value<int>(), "mode pour export netcdf to raster : 1 grille rotationnée SOP, 2 grille IRM")
             ;
 
     po::variables_map vm;
@@ -78,6 +82,10 @@ int main(int argc, char *argv[])
 
     GDALAllRegister();
     //std::string aInTuile,aInArbre,aOut;
+    if (vm.count("mode")) {mode=vm["mode"].as<int>();
+    if (mode==1){grid=SOP;}
+    if (mode==2){grid=irm;}
+    }
 
     if (vm.count("input")) {input=vm["input"].as<std::string>();
         std::cout << " je vais utiliser le fichier de donnée IRM " << input << std::endl;
@@ -163,23 +171,28 @@ int main(int argc, char *argv[])
             break;
         }
         case 6:{
-            std::cout << " test MAR data" << std::endl;
-            setGeoTMAR(input);
+            // ./climatApp --outil 6 --input "/home/gef/app/climat/doc/grilleIRMGDL.nc:ZBIO" --outDir ./grilleIRMZBIO.tif --mode 2
+
+            std::cout << " export raster from netcdf " << input << " to " << pathOut << std::endl;
+            //setGeoTMAR(input);
+            exportRaster(input,pathOut,grid);
             break;
         }
         case 7:{
+            // ./climatApp --outil 7 --input "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/" --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc"
+
+
             std::cout << " MAR netcdf : passage de l'horaire au journalier" << std::endl;
-            MAR mar(input,input2,0);
-            //mar.hourly2daily();
-            //mar.daily2monthly();
-            //mar.multiY(1990,2020);
-            mar.multiYStat(1990,2020);
+            MAR mar(input,input2,grid,0);
+            mar.hourly2daily();
+            mar.daily2monthly();
+           // mar.multiY(1991,2020);
+            //mar.multiYStat(1991,2020);
 
             //mar.multiY(1980,2010);
-            mar.multiYStat(1980,2010);
-
+            //mar.multiYStat(1980,2010);
             //mar.multiY(2010,2020);
-            mar.multiYStat(2010,2020);
+            //mar.multiYStat(2010,2020);
 
 
             break;
