@@ -180,14 +180,15 @@ int main(int argc, char *argv[])
         }
         case 7:{
             // ./climatApp --outil 7 --input "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/" --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc"
+            // ./climatApp --outil 7 --input "/home/jo/Documents/climat_MAR/MAR-IRM" --input2 "/home/jo/app/climat/doc/grilleIRMGDL.nc"
 
 
             std::cout << " MAR netcdf : passage de l'horaire au journalier" << std::endl;
             MAR mar(input,input2,grid,0);
-            mar.hourly2daily();
-            mar.daily2monthly();
-           // mar.multiY(1991,2020);
-            //mar.multiYStat(1991,2020);
+            //mar.hourly2daily();
+            //mar.daily2monthly();
+            //mar.multiY(1991,2020);
+            mar.multiYStat(1991,2020);
 
             //mar.multiY(1980,2010);
             //mar.multiYStat(1980,2010);

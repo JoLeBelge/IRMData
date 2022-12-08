@@ -295,6 +295,10 @@ cdo merge grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDLSH.nc grilleIRMGDLPi
 cdo --format nc -input,gridIRMGDL grilleIRMGDLZbio.nc < grilleIRMGDLCompleteZbio.csv
 cdo setvar,ZBIO -setcode,5 grilleIRMGDLZbio.nc grilleIRMGDLZbio.nc
 
+--> renommer ZBIO en zbio pour harmoniser les différentes grilles
+
+cdo merge -selvar,LON,LAT,SH,ID grilleIRMGDL.nc -setvar,zbio -setcode,5 -selvar,ZBIO grilleIRMGDL.nc grilleIRMGDL2.nc
+
 cdo merge grilleIRMGDLZbio.nc grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDLSH.nc grilleIRMGDLPixID.nc grilleIRMGDL.nc
 
 
@@ -341,7 +345,38 @@ cdo merge grilleIRMGDLZbio.nc grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDL
  -39  LHF           Latent Heat Flux [w/m2]
  -40  CC            Cloud Cover [-]
 
-pas de chance, le passage de hourly to daily a l'air trop long, code pas compatible. Dommage...
+pas de chance, le passage de hourly to daily a l'air trop long, code pas compatible. Dommage... En fait c'est parce que c'est une archive, il faut décompressé
+https://code.mpimet.mpg.de/boards/1/topics/4211
+
+cdo showformat MARv3.12-ERA5-1980.nc 
+NetCDF4 classic zip
+
+je teste avec 
+nccopy -k nc4 -d 0 MARv3.12-ERA5-1980.nc  test.nc
+
+nccopy -k 4 -d 1 MARv3.12-ERA5-1980.nc  test.nc
+
+cdo -infov -timmean MARv3.12-ERA5-1980.nc
+cdo -infov -timmean test.nc
+
+
+Ca n'accélère pas assez le résultat.. peut-être un prob de no data??
+
+cdo –b F64 setmissval,-999 testD0.nc sample.nc
+
+https://code.mpimet.mpg.de/boards/2/topics/12212?r=12222
+par le du chunking de la compression
+non c'est pas ça. ncdump -h -s MARv3.12-ERA5-1980.nc
+
+https://stackoverflow.com/questions/61897934/change-variable-chunk-of-a-netcdf-with-r
+nccopy -c time/1000,lat/10,lon/10 input.nc output.chunked.nc 
+
+nccopy -c time/1,y/55,x/66 MARv3.12-ERA5-1980.nc MARv3.12-ERA5-1980.chunked.nc 
+--> un gros 10 minutes
+
+ncks --cnk_dmn y,55 --cnk_dmn x,66 --cnk_dmn time,1 MARv3.12-ERA5-1980.nc MARv3.12-ERA5-1980.chunked2.nc
+--> lancé à 12h59
+
 
  
  

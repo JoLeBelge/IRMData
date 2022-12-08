@@ -86,5 +86,22 @@ cdo cat MAR-daily/MARv3.12.2-ERA5-daily-1980.nc MAR-daily/MARv3.12.2-ERA5-daily-
 
 oui ça fonctionne sur les plus petits fichiers.. mais bon ça m'arrange pas.
 
+nombre de jour de gelée;
+cdo eca_fd -expr,'TN=T2mN+274.15;' MARv3.12-ERA5-UZhourly-1991-2020ydaymeanTN.nc tmp.nc
+
+cdo eca_fd -expr,'TN=T2mN+274.15;' -selmonth,5 MARv3.12-ERA5-UZhourly-1991-2020ydaymeanTN.nc tmp.nc
+
+--> plutot faire tourner le eca_fd sur chaque années puis faire une moyenne du résultat. Ca ne donne pas la mm chose, ça c'est certain.
+
+cdo etccdi_fd,freq=month -expr,'TN=T2mN+274.15;' MARv3.12-ERA5-UZhourly-1991-2020ydaymeanTN.nc tmp.nc
+
+cdo cat -eca_fd -expr,'TN=T2mN+274.15;' /home/jo/Documents/climat_MAR/MAR-IRM/MAR-daily/MARv3.12-ERA5-UZhourly-daily-1980.nc -eca_fd -expr,'TN=T2mN+274.15;' /home/jo/Documents/climat_MAR/MAR-IRM/MAR-daily/MARv3.12-ERA5-UZhourly-daily-1981.nc tmp.nc
+
+cdo eca_su,30,freq=month -expr,'TN=T2mN+274.15;' MARv3.12-ERA5-UZhourly-1991-2020ydaymeanTN.nc tmp.nc
+
+
+
+
+
 
 
