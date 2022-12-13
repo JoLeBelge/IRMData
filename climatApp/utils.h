@@ -16,7 +16,8 @@
 
 // différent moyen d'aggréger les valeurs par mois
 enum typeGrid {SOP
-                    ,irm
+               ,irm
+               ,SOP75
                    };
 
 namespace qi = boost::spirit::qi;

@@ -11,8 +11,12 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
   ,mWd(aWd),mOutMY(aWd+"/MAR-MultiY")
   ,zbioNc(aZbioNc)
   ,mTypeGrid(aGrid)
+  ,mFromDaily(fromDaily)
  // ,mOutChunk(aWd+"/Chunked")
 {
+
+    int nbCharToRm(0);
+    if (mTypeGrid==SOP75){nbCharToRm=14;}
 
     std::cout << "gestion fichiers mar depuis le répertoire " << aWd << std::endl;
     if(!boost::filesystem::exists(mOutDaily)){boost::filesystem::create_directory(mOutDaily);}
@@ -34,9 +38,9 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
                 int year;
                 try
                 {
-                    std::string y = s.substr(s.size()-7,4);
+                    std::string y = s.substr(s.size()-7-nbCharToRm,4);
                     std::string tmp;
-                   tmp=s.substr(0,s.size()-7);
+                    tmp=s.substr(0,s.size()-7-nbCharToRm);
 
                     if (tmp.substr(tmp.size()-7,7)=="-hourly"){
                          tmp.substr(0, tmp.size()-7);
@@ -91,7 +95,18 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
         Tvar="T2m";
         Pvar="RF";
 
-        rechunk();
+        rechunk();// renomme aussi les fichiers de base!!
+    }
+
+    case SOP75:{
+        vVarsSum={"RF","RO3","ET","SL"};
+        vVarsGXN={"TT","ST"};
+        vVarsG={"SLQ"};
+        Tvar="TT";// varie avec atmlay, il y en a 3 dans ces fichiers là..
+        Pvar="RF";
+        // bon je n'ai pas de température minimum ou maximum dans ces sorties MAR. Donc ça vaut bien la peine. Qu'est-ce que cela implique?
+
+        mFromDaily=1;
     }
 
     }
@@ -119,8 +134,6 @@ void MAR::rechunk(){
 void MAR::hourly2daily(){
 
     for (auto kv : mYearNcdf){
-
-
 
 
 
@@ -207,7 +220,7 @@ void MAR::daily2monthly(){
 
             std::cout << aCommand << std::endl;
             system(aCommand.c_str());
-            //break;
+            break;
 
         }
         else {  std::cout << "daily to monthly : pas d'input pour y " << kv.first << " input " << dailyFile(kv.first) <<  std::endl;}
@@ -218,7 +231,7 @@ void MAR::daily2monthly(){
 void MAR::multiY(int y1,int y2){
 
      std::cout << "MAR::multiY" << std::endl;
-    std::string aCommand="cdo cat ";
+    std::string aCommand="cdo copy ";
     int nbY(0);
     for (auto kv : mYearNcdf){
         if (kv.first>y1-1 && kv.first < y2+1){
@@ -236,7 +249,7 @@ void MAR::multiY(int y1,int y2){
 
    // j'y ajoute TTN et TTX - non il rale,  cat (Abort): Input streams have different number of variables per timestep! sois-disant
 
-    aCommand="cdo cat ";
+    aCommand="cdo copy ";
     for (auto kv : mYearNcdf){
         if (kv.first>y1-1 && kv.first < y2+1){
             std::string aIn=dailyFile(kv.first);
@@ -246,7 +259,7 @@ void MAR::multiY(int y1,int y2){
     aCommand += " " + nameMultiY(y1,y2,"dailyTG");
     std::cout << aCommand << std::endl;
      system(aCommand.c_str());
-    aCommand="cdo cat ";
+    aCommand="cdo copy ";
     for (auto kv : mYearNcdf){
         if (kv.first>y1-1 && kv.first < y2+1){
             std::string aIn=dailyFile(kv.first);
@@ -256,7 +269,7 @@ void MAR::multiY(int y1,int y2){
     aCommand += " " + nameMultiY(y1,y2,"dailyTN");
     std::cout << aCommand << std::endl;
     system(aCommand.c_str());
-    aCommand="cdo cat ";
+    aCommand="cdo copy ";
     for (auto kv : mYearNcdf){
         if (kv.first>y1-1 && kv.first < y2+1){
             std::string aIn=dailyFile(kv.first);
@@ -270,7 +283,7 @@ void MAR::multiY(int y1,int y2){
 
 void MAR::multiYStat(int y1,int y2){
        std::string aCommand;
-    bool compute(0);
+    bool compute(1);
     if (compute){
     // bug sur TS de 30 ans. Le faire par petites étapes? par tranches de 10ans? non résoudre le prblem, en gardant la taille des fichiers pas trop élevée (moins de variables dedans)
     aCommand="cdo -ydaymean "+ nameMultiY(y1,y2,"dailyTG")+" "+ nameMultiY(y1,y2,"ydaymeanTG");
@@ -291,28 +304,28 @@ void MAR::multiYStat(int y1,int y2){
 
     // moyenne trentenaire par mois
     aCommand="cdo -ymonmean -selname,"+Pvar+","+Tvar+"G "+ nameMultiY(y1,y2,"monthly")+" "+ nameMultiY(y1,y2,"G");
-    std::cout << aCommand << std::endl;
+    std::cout << aCommand <<  "\n" <<std::endl;
     system(aCommand.c_str());
 
     // somme sur l'année
     aCommand="cdo -yearsum -selvar,"+Pvar+" " + nameMultiY(y1,y2,"G") + " " + nameMultiY(y1,y2,"MBRRS");
-    std::cout << aCommand << std::endl;
+    std::cout << aCommand << "\n" << std::endl;
     system(aCommand.c_str());
 
     exportRaster( "'" +nameMultiY(y1,y2,"MBRRS")+"':"+Pvar,nameRastMultiY(y1,y2,"MBRRS"),mTypeGrid);
 
     // moyenne sur l'année
     aCommand="cdo -yearmean -selvar,"+Tvar+"G " + nameMultiY(y1,y2,"G") + " " + nameMultiY(y1,y2,"TTG");
-    std::cout << aCommand << std::endl;
+    std::cout << aCommand << "\n" << std::endl;
     system(aCommand.c_str());
     exportRaster("'" +nameMultiY(y1,y2,"TTG")+"':"+Tvar+"G",nameRastMultiY(y1,y2,"TTG"),mTypeGrid);
 
     // min et max pour TT
     aCommand="cdo -yearmin -ymonmin -selname,"+Tvar+"N "+ nameMultiY(y1,y2,"monthly")+" "+ nameMultiY(y1,y2,"TTN");
-    std::cout << aCommand << std::endl;
+    std::cout << aCommand <<  "\n" << std::endl;
     system(aCommand.c_str());
     aCommand="cdo -yearmax -ymonmax -selname,"+Tvar+"X "+ nameMultiY(y1,y2,"monthly")+" "+ nameMultiY(y1,y2,"TTX");
-    std::cout << aCommand << std::endl;
+    std::cout << aCommand <<  "\n" <<std::endl;
     system(aCommand.c_str());
 
     exportRaster("'" +nameMultiY(y1,y2,"TTX")+"':"+Tvar+"X",nameRastMultiY(y1,y2,"TTX"),mTypeGrid);
@@ -321,7 +334,7 @@ void MAR::multiYStat(int y1,int y2){
 
     // somme des précipitation de avril à septembre
     aCommand="cdo -yearsum -selmonth,4/9 -selvar,"+Pvar+" " + nameMultiY(y1,y2,"G") + " " + nameMultiY(y1,y2,"m4_7MBRRS");
-    std::cout << aCommand << std::endl;
+    std::cout << aCommand  <<  "\n" <<std::endl;
     system(aCommand.c_str());
 
     // export au format raster
@@ -338,7 +351,7 @@ void MAR::multiYStat(int y1,int y2){
    case SOP: aCommand="cdo -expr,'BHE=BHE/100;' -vertmean -expr,'BHE=MBRO3*FRV-MBET*FRV-MBSL*FRV;' -merge -yearsum -selmonth,4/9 -ymonmean -selname,MBRO3,MBET,MBSL "+ nameMultiY(y1,y2,"monthly")+" -selvar,FRV "+ mWd+"/"+mYearNcdf.begin()->second +" "+  nameMultiY(y1,y2,"BHE");
    case irm: aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -ymonmean -selname,RO3,ET,SL "+ nameMultiY(y1,y2,"monthly")+" "+  nameMultiY(y1,y2,"BHE");
    }
-   std::cout << aCommand << std::endl;
+   std::cout << aCommand <<  "\n" << std::endl;
    system(aCommand.c_str());
 
    exportRaster("'" +nameMultiY(y1,y2,"BHE")+"':BHE",nameRastMultiY(y1,y2,"BHE"),mTypeGrid);
@@ -361,9 +374,9 @@ void MAR::multiYStat(int y1,int y2){
    exportRaster("'" +nameMultiY(y1,y2,"GSL")+"':GSL",nameRastMultiY(y1,y2,"GSL"),mTypeGrid);
 
    //nombre de jours de gel : on va pas fonctionner comme GSL, car sinon ça fait des résultas trop restrictifs
-   //cdo cat -eca_fd -expr,'TN=T2mN+274.15;' /home/jo/Documents/climat_MAR/MAR-IRM/MAR-daily/MARv3.12-ERA5-UZhourly-daily-1980.nc -eca_fd -expr,'TN=T2mN+274.15;' /home/jo/Documents/climat_MAR/MAR-IRM/MAR-daily/MARv3.12-ERA5-UZhourly-daily-1981.nc tmp.nc
+   //cdo copy -eca_fd -expr,'TN=T2mN+274.15;' /home/jo/Documents/climat_MAR/MAR-IRM/MAR-daily/MARv3.12-ERA5-UZhourly-daily-1980.nc -eca_fd -expr,'TN=T2mN+274.15;' /home/jo/Documents/climat_MAR/MAR-IRM/MAR-daily/MARv3.12-ERA5-UZhourly-daily-1981.nc tmp.nc
    aCommand="cdo -setvar,FD -eca_fd -expr,'TN="+Tvar+"N+274.15;' -vertmean -selvar,"+Tvar+"N "+nameMultiY(y1,y2,"ydaymeanTN") +" "+ nameMultiY(y1,y2,"FD");
-   aCommand="cdo cat ";
+   aCommand="cdo copy ";
    for (auto kv : mYearNcdf){
        if (kv.first>y1-1 && kv.first < y2+1){
            std::string aIn=dailyFile(kv.first);
@@ -378,7 +391,7 @@ void MAR::multiYStat(int y1,int y2){
 
 
     // nb jours qui dépassent un seuil max de température
-   aCommand="cdo cat ";
+   aCommand="cdo copy ";
    for (auto kv : mYearNcdf){
        if (kv.first>y1-1 && kv.first < y2+1){
            std::string aIn=dailyFile(kv.first);
@@ -391,7 +404,7 @@ void MAR::multiYStat(int y1,int y2){
    // autant de bandes que d'année!
    exportRaster(nameMultiY(y1,y2,"SD30")+":SD",nameRastMultiY(y1,y2,"SD30"),mTypeGrid);
 
-   aCommand="cdo cat ";
+   aCommand="cdo copy ";
    for (auto kv : mYearNcdf){
        if (kv.first>y1-1 && kv.first < y2+1){
            std::string aIn=dailyFile(kv.first);
@@ -407,6 +420,7 @@ void MAR::multiYStat(int y1,int y2){
 }
 
     // création du tableau
+    if (1){
    std::string aTable(mOutMY+"/table"+std::to_string(y1)+"-"+std::to_string(y2)+"ZBIO.csv");
 
    std::ofstream ofs (aTable, std::ofstream::out);
@@ -446,12 +460,15 @@ void MAR::multiYStat(int y1,int y2){
     ofs <<exec(aCommand.c_str()) << "\n";
     j++;
    }
-
+    }
 
 }
 
 std::string MAR::dailyFile(int y){
-    return mOutDaily+"/"+mBaseName+"daily-"+std::to_string(y)+".nc";
+
+    std::string aRes=mOutDaily+"/"+mBaseName+"daily-"+std::to_string(y)+".nc";
+    if(mFromDaily){ aRes=mWd+"/"+mYearNcdf.at(y);}
+    return aRes;
 }
 
 std::string MAR::chunkedFile(int y){

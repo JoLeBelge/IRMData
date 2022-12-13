@@ -377,6 +377,25 @@ nccopy -c time/1,y/55,x/66 MARv3.12-ERA5-1980.nc MARv3.12-ERA5-1980.chunked.nc
 ncks --cnk_dmn y,55 --cnk_dmn x,66 --cnk_dmn time,1 MARv3.12-ERA5-1980.nc MARv3.12-ERA5-1980.chunked2.nc
 --> lancé à 12h59
 
+---------- grille à 7.5 km de résolution --------------------
+
+cdo griddes MARv3.12-2050-MIROC6-ssp245.nc > mar75km.txt
+
+suppression de grille 2
+
+sed -i "s/generic/lonlat/g" mar75km.txt
+
+Then use CDO to set the grid:
+
+
+outputf,%8.4g,80
+cdo outputtab,lon,lat,LON,LAT -selgrid,1 -setgrid,mar75km.txt -seltimestep,1 MARv3.12-2050-MIROC6-ssp245.nc
+
+cdo outputf,%8.4g,1 -selvar,LON,LAT -selgrid,1 -setgrid,mar75km.txt -seltimestep,1 MARv3.12-2050-MIROC6-ssp245.nc > MAR7.5kmLONLAT.csv
+
+
+
+
 
  
  

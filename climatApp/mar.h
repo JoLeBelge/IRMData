@@ -36,6 +36,7 @@ public:
     std::string chunkedFile(int y);
     std::map<int,std::string> mYearNcdf;
     std::string mOutDaily,mOutMonthly,mOutMY,mWd, mBaseName, zbioNc;
+    bool mFromDaily;
     //,mOutChunk
 
     typeGrid mTypeGrid;
