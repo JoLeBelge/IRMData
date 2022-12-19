@@ -17,6 +17,7 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
 
     int nbCharToRm(0);
     if (mTypeGrid==SOP75){nbCharToRm=14;}
+    if (mTypeGrid==SOP75){nbCharToRm=5;}
 
     std::cout << "gestion fichiers mar depuis le répertoire " << aWd << std::endl;
     if(!boost::filesystem::exists(mOutDaily)){boost::filesystem::create_directory(mOutDaily);}
@@ -348,12 +349,12 @@ void MAR::multiYStat(int y1,int y2){
 
 
     // somme des précipitation de avril à septembre
-    aCommand="cdo -yearsum -selmonth,4/9 -selvar,"+Pvar+" " + nameMultiY(y1,y2,"G") + " " + nameMultiY(y1,y2,"m4_7MBRRS");
+    aCommand="cdo -yearsum -selmonth,4/9 -selvar,"+Pvar+" " + nameMultiY(y1,y2,"G") + " " + nameMultiY(y1,y2,"m4_9MBRRS");
     std::cout << aCommand  <<  "\n" <<std::endl;
     system(aCommand.c_str());
 
     // export au format raster
-    exportRaster("'" +nameMultiY(y1,y2,"m4_7MBRRS")+"':"+Pvar+"",nameRastMultiY(y1,y2,"m4_7MBRRS"),mTypeGrid);
+    exportRaster("'" +nameMultiY(y1,y2,"m4_9MBRRS")+"':"+Pvar+"",nameRastMultiY(y1,y2,"m4_9MBRRS"),mTypeGrid);
 
    // bilan hydrique estival :" MBRO3-MBET-MBSL" je commence avec cette approche car c'est les variables que j'ai sur mon portable
    // par contre pour une des variables j'ai les secteurs à choisir... c'est ce qui est nommé levels par cdo, donc sellevidx -sellevidx,1 ou alors vertmean. mais vu que c'est une moyenne pondérée par classe de végétation je dois utiliser la grille FRV
@@ -502,7 +503,7 @@ void MAR::multiYStat(int y1,int y2){
     aCommand="cdo -s -outputf,%8.6g,80 -fldmin -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TTN") ;
     std::cout << aCommand << std::endl;
     ofs <<exec(aCommand.c_str()) << ";";
-    aCommand="cdo -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"m4_7MBRRS") ;
+    aCommand="cdo -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"m4_9MBRRS") ;
     ofs <<exec(aCommand.c_str()) << ";";
     aCommand="cdo -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"BHE") ;
     ofs <<exec(aCommand.c_str()) << ";";

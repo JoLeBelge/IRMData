@@ -191,27 +191,17 @@ int main(int argc, char *argv[])
             MAR mar(input,input2,grid,0);
             mar.hourly2daily();
             mar.daily2monthly();
-             //mar.multiY(1991,2020);
-
-
-           // mar.multiYStat(1991,2020);
-
-            //mar.multiY(1980,2010);
-            //mar.multiYStat(1980,2010);
-            //mar.multiY(2010,2020);
-            //mar.multiYStat(2010,2020);
-
-
-            mar.multiY(2021,2050);
+             mar.multiY(1981,2010);
+             mar.multiYStat(1981,2010);
+             mar.multiY(1991,2020);
+            mar.multiYStat(1991,2020);
+            /*mar.multiY(2021,2050);
             mar.multiYStat(2021,2050);
-
             mar.multiYStat(2021,2050);
-
-            //mar.multiY(2051,2080);
+            mar.multiY(2051,2080);
             mar.multiYStat(2051,2080);
-            //mar.multiY(2081,2100);
-            mar.multiYStat(2081,2100);
-
+            mar.multiY(2081,2100);
+            mar.multiYStat(2081,2100);*/
 
             break;
         }
