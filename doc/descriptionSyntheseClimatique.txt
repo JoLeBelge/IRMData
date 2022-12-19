@@ -1,0 +1,55 @@
+Description des variables dans le tableau climatique de synthèse
+-----------------------------------------------------------------
+De manière générale ; X pour max, G pour moyenne, N pour minimum
+certain indice climatique sont calculé avec les outils de CDO, et la doc est assez bien faite ; 
+https://earth.bsc.es/gitlab/ces/cdo/raw/b4f0edf2d5c87630ed4c5ddee5a4992e3e08b06a/doc/cdo_eca.pdf
+je fais référenc à cette doc en mentionnant cdo_eca + le nom de l'algorithme utilisé
+
+ZBIO; zone bioclimatique
+MBRR; somme annuelles des précipitations
+TTG;température moyenne
+TTX;temp max
+TTN;temp min
+
+m4_9MBRR; somme des précipitations des mois 4 à 9
+
+BHE; bilan hydrique estival : MBRO3 - MBET - MBSL (voir slide du model de Xavier), avec:
+
+RO3 = Rainfall (after snow)
+MBET = Evapotranspiration
+MBSL = Sublimation from soil
+
+
+BHE2 ; moyenne de Soil Humidity content [tonne] pour les mois 4 à 9
+
+Ces deux indices de bilan hydrique estival sont différent du traditionnel P-ET0, car l'évatranspiration potentielle 0 considère la consommation d'eau d'une pelouse rase, alors que les indices calculé ici prennent en compte l'occupation du sol et donc la végétation en place qui n'est évidemment pas une pelouse rase.
+  
+
+GSL(6,8); longeur de la saison de végétation - voir cdo_eca algo ECAGSL - Thermal Growing season length index
+le début de la saison de végétation est détecté par 6 jours consécutif avec une température moyenne de 8 degré au minimum
+
+
+SD30; summer day nombre de jour avec TMax dépassant 30 degré ; voir cdo_eca algo ECASU - Summer days index per time period
+
+SD40; summer day nombre de jour avec TMax dépassant 40 degré
+
+SDG20 ; summer day mais en utilisant la température moyenne et un seuil de 20 degré.
+SDG25 ; summer day mais en utilisant la température moyenne et un seuil de 25 degré.
+les summers day avec température moyenne sont calculé car les simulations MAR sur grille 7.5km sont pour le moment fournie au format journalier (et pas horaire) sans TMax et TMin. Donc TMax journalier = Tmean journalier. Tmax mensuel = max de Tmean journalier.
+
+FD; frost day nombre de jour avec TMin inférieur à 0 degré ; voir cdo_eca ECAFD - Frost days index per time period
+
+FDG ; frost day mais avec TMean inférieur à 0 degré. Pareil que pour SDG20 et SDG25 ; pour les simulation 7.5km je n'ai pas de Tmin journalier.
+
+
+---------------------- commande gdal pour passer les raster à une résolution plus fine pour un affichage ayant un chouette rendu
+
+gdal_translate MARv3.12-ERA5-UZhourly-1991-2020MBRRS.tif -r cubicspline -tr 100 100 MARv3.12-ERA5-UZhourly-1991-2020MBRRS_GSD100mCubicSpline.tif
+
+cette ligne de commande effectue un rééchantillonnage d'un raster à 5km de résolution vers un output à 100 mètres de résolution ( tr 100 100 ) en utilisant un rééchantillonnage cubicspline
+
+la synthaxe de la commande est donc :
+
+gdal_translate input -r cubicspline -tr 100 100 output
+
+
