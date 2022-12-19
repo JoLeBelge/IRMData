@@ -95,7 +95,8 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
         Tvar="T2m";
         Pvar="RF";
 
-        rechunk();// renomme aussi les fichiers de base!!
+        rechunk();// renomme aussi les fichiers de base, donc je dois le faire
+        break; // si pas le break, problème!
     }
 
     case SOP75:{
@@ -106,7 +107,9 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
         Pvar="RF";
         // bon je n'ai pas de température minimum ou maximum dans ces sorties MAR. Donc ça vaut bien la peine. Qu'est-ce que cela implique?
 
-        mFromDaily=1;
+        //mFromDaily=1;
+        mFromDaily=0; // je vais recréer des daily et dupliquer la variable de températeur en X, N et G pour rendre compatible le code.
+        break;
     }
 
     }
@@ -136,7 +139,6 @@ void MAR::hourly2daily(){
     for (auto kv : mYearNcdf){
 
 
-
         if (boost::filesystem::exists(dailyFile(kv.first))){
             boost::filesystem::remove(dailyFile(kv.first));
         }
@@ -146,8 +148,6 @@ void MAR::hourly2daily(){
         // check compression ; si compression, on décompresse.
         //const char * p=aIn.c_str();
         //NcFile in(p,NcFile::FileMode::ReadOnly,NULL,0,NcFile::FileFormat::Netcdf4);
-
-
 
         std::string aCommand="cdo merge "
                              "-selname,LON,LAT " +aIn + " ";
@@ -162,15 +162,30 @@ void MAR::hourly2daily(){
         sub+= " " + aIn + " ";
         aCommand +=sub;
 
-
-        for (std::string var : vVarsGXN){
-            aCommand+= "-daymean -setvar,"+var+"G -selname,"+var+" "+aIn +" ";
-            aCommand+= "-daymax -setvar,"+var+"X -selname,"+var+" "+aIn+" ";
-            aCommand+= "-daymin -setvar,"+var+"N -selname,"+var+" "+aIn+" ";
-        }
         for (std::string var : vVarsG){
             aCommand+= "-daymean -selname,"+var+" "+aIn +" ";
         }
+
+
+        // pour la grille en 7.5 ; c'est des input daily mais sans Tmax ou Tmin,donc je triche ici
+     /*   switch(mTypeGrid){
+        case SOP75:{
+
+
+
+        }
+        default :{*/
+
+            for (std::string var : vVarsGXN){
+
+                // températeur qui dépends de ATMLAY pour MAR 7.5 km ; je choisis le premier level vertical
+                aCommand+= "-daymean -setvar,"+var+"G -sellevidx,1 -selname,"+var+" "+aIn +" ";
+                aCommand+= "-daymax -setvar,"+var+"X -sellevidx,1 -selname,"+var+" "+aIn+" ";
+                aCommand+= "-daymin -setvar,"+var+"N -sellevidx,1 -selname,"+var+" "+aIn+" ";
+            }
+
+      //  }
+       //     }
 
         aCommand += dailyFile(kv.first);
 
@@ -220,7 +235,7 @@ void MAR::daily2monthly(){
 
             std::cout << aCommand << std::endl;
             system(aCommand.c_str());
-            break;
+          //  break;
 
         }
         else {  std::cout << "daily to monthly : pas d'input pour y " << kv.first << " input " << dailyFile(kv.first) <<  std::endl;}
@@ -247,7 +262,7 @@ void MAR::multiY(int y1,int y2){
 
     // pour le moment, juste pour TTG car sinon fait des fichiers trop volumineux qui font bugger cdo ydaymean, en tout cas si période = trentenaire
 
-   // j'y ajoute TTN et TTX - non il rale,  cat (Abort): Input streams have different number of variables per timestep! sois-disant
+   // j'y ajoute TTN et TTX - non il rale,  cat (Abort): Input streams have different number of variables per timestep! sois-disant. attention, pas cat mais copy!
 
     aCommand="cdo copy ";
     for (auto kv : mYearNcdf){
@@ -348,8 +363,9 @@ void MAR::multiYStat(int y1,int y2){
 
 
    switch (mTypeGrid){
-   case SOP: aCommand="cdo -expr,'BHE=BHE/100;' -vertmean -expr,'BHE=MBRO3*FRV-MBET*FRV-MBSL*FRV;' -merge -yearsum -selmonth,4/9 -ymonmean -selname,MBRO3,MBET,MBSL "+ nameMultiY(y1,y2,"monthly")+" -selvar,FRV "+ mWd+"/"+mYearNcdf.begin()->second +" "+  nameMultiY(y1,y2,"BHE");
-   case irm: aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -ymonmean -selname,RO3,ET,SL "+ nameMultiY(y1,y2,"monthly")+" "+  nameMultiY(y1,y2,"BHE");
+   case SOP: aCommand="cdo -expr,'BHE=BHE/100;' -vertmean -expr,'BHE=MBRO3*FRV-MBET*FRV-MBSL*FRV;' -merge -yearsum -selmonth,4/9 -ymonmean -selname,MBRO3,MBET,MBSL "+ nameMultiY(y1,y2,"monthly")+" -selvar,FRV "+ mWd+"/"+mYearNcdf.begin()->second +" "+  nameMultiY(y1,y2,"BHE"); break;
+   case irm: aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -ymonmean -selname,RO3,ET,SL "+ nameMultiY(y1,y2,"monthly")+" "+  nameMultiY(y1,y2,"BHE"); break;
+   case SOP75: aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -ymonmean -selname,RO3,ET,SL "+ nameMultiY(y1,y2,"monthly")+" "+  nameMultiY(y1,y2,"BHE");break;
    }
    std::cout << aCommand <<  "\n" << std::endl;
    system(aCommand.c_str());
@@ -359,9 +375,11 @@ void MAR::multiYStat(int y1,int y2){
    // suivi de l'humidité du sol comme indice de bilan hydrique estival
 
    switch (mTypeGrid){
-   case SOP:    aCommand="cdo -expr,'BHE2=BHE2/100;' -vertmean -expr,'BHE2=SLQC*FRV;' -merge -yearsum -selmonth,4/9 -ymonmean -selname,SLQC "+ nameMultiY(y1,y2,"monthly")+" -selvar,FRV "+ mWd+"/"+mYearNcdf.begin()->second +" "+  nameMultiY(y1,y2,"BHE2");
-   case irm: aCommand="cdo -expr,'BHE2=SQC/6000;' -yearsum -selmonth,4/9 -ymonmean -selname,SQC "+ nameMultiY(y1,y2,"monthly")+" "+  nameMultiY(y1,y2,"BHE2");
-       // pour une moyenne en tonne (unitée de base: kg d'humidité)
+   case SOP:    aCommand="cdo -expr,'BHE2=BHE2/100;' -vertmean -expr,'BHE2=SLQC*FRV;' -merge -yearsum -selmonth,4/9 -ymonmean -selname,SLQC "+ nameMultiY(y1,y2,"monthly")+" -selvar,FRV "+ mWd+"/"+mYearNcdf.begin()->second +" "+  nameMultiY(y1,y2,"BHE2");break;
+   case irm: aCommand="cdo -expr,'BHE2=SQC/6000;' -yearsum -selmonth,4/9 -ymonmean -selname,SQC "+ nameMultiY(y1,y2,"monthly")+" "+  nameMultiY(y1,y2,"BHE2");break;
+       // pour une moyenne en tonne (unitée de base: kg d'humidité). Pourquoi 6000  --> 6 moi x 1000 kg par tonne
+   case SOP75: aCommand="cdo -expr,'BHE2=SLQ/6000;' -yearsum -selmonth,4/9 -ymonmean -selname,SLQ "+ nameMultiY(y1,y2,"monthly")+" "+  nameMultiY(y1,y2,"BHE2");break;
+
    }
     std::cout << aCommand << std::endl;
    system(aCommand.c_str());
@@ -389,8 +407,21 @@ void MAR::multiYStat(int y1,int y2){
    // autant de bandes que d'année!
    exportRaster(nameMultiY(y1,y2,"FD")+":FD",nameRastMultiY(y1,y2,"FD"),mTypeGrid);
 
+   // même chose mais sur température moyenne
+   aCommand="cdo copy ";
+   for (auto kv : mYearNcdf){
+       if (kv.first>y1-1 && kv.first < y2+1){
+           std::string aIn=dailyFile(kv.first);
+           aCommand += " -setvar,FD -eca_fd -expr,'TN="+Tvar+"G+274.15;' " + dailyFile(kv.first);
+       }
+   }
+   aCommand += " " + nameMultiY(y1,y2,"FDG");
+   std::cout << aCommand << std::endl;
+   system(aCommand.c_str());
+   // autant de bandes que d'année!
+   exportRaster(nameMultiY(y1,y2,"FDG")+":FD",nameRastMultiY(y1,y2,"FDG"),mTypeGrid);
 
-    // nb jours qui dépassent un seuil max de température
+    // nb jours qui dépassent un seuil max de température max
    aCommand="cdo copy ";
    for (auto kv : mYearNcdf){
        if (kv.first>y1-1 && kv.first < y2+1){
@@ -417,6 +448,35 @@ void MAR::multiYStat(int y1,int y2){
    // autant de bandes que d'année!
    exportRaster(nameMultiY(y1,y2,"SD40")+":SD",nameRastMultiY(y1,y2,"SD40"),mTypeGrid);
 
+
+   // nb jours qui dépassent un seuil max de température moy ----------------------------
+  aCommand="cdo copy ";
+  for (auto kv : mYearNcdf){
+      if (kv.first>y1-1 && kv.first < y2+1){
+          std::string aIn=dailyFile(kv.first);
+          aCommand += " -setvar,SD -eca_su,20 -expr,'TX="+Tvar+"G+274.15;' " + dailyFile(kv.first);
+      }
+  }
+  aCommand += " " + nameMultiY(y1,y2,"SDG20");
+  std::cout << aCommand << std::endl;
+  system(aCommand.c_str());
+  // autant de bandes que d'année!
+  exportRaster(nameMultiY(y1,y2,"SDG20")+":SD",nameRastMultiY(y1,y2,"SDG20"),mTypeGrid);
+
+  aCommand="cdo copy ";
+  for (auto kv : mYearNcdf){
+      if (kv.first>y1-1 && kv.first < y2+1){
+          std::string aIn=dailyFile(kv.first);
+          aCommand += " -setvar,SD -eca_su,25 -expr,'TX="+Tvar+"G+274.15;' " + dailyFile(kv.first);
+      }
+  }
+  aCommand += " " + nameMultiY(y1,y2,"SDG25");
+  std::cout << aCommand << std::endl;
+  system(aCommand.c_str());
+  // autant de bandes que d'année!
+  exportRaster(nameMultiY(y1,y2,"SDG25")+":SD",nameRastMultiY(y1,y2,"SDG25"),mTypeGrid);
+
+
 }
 
     // création du tableau
@@ -424,7 +484,7 @@ void MAR::multiYStat(int y1,int y2){
    std::string aTable(mOutMY+"/table"+std::to_string(y1)+"-"+std::to_string(y2)+"ZBIO.csv");
 
    std::ofstream ofs (aTable, std::ofstream::out);
-    ofs << "ZBIO;MBRR;TTG;TTX;TTN;m4_9MBRR;BHE;BHE2;GSL(6,8);SD30;SD40;FD\n";
+    ofs << "ZBIO;MBRR;TTG;TTX;TTN;m4_9MBRR;BHE;BHE2;GSL(6,8);SD30;SD40;SDG20;SDG25;FD;FDG\n";
    // system(aCommand.c_str());
     std::vector<std::string> vZbio={"HA et HCO", "HA", "HCO", "BMA","Oesling", "Gutland"};
    int j(0);
@@ -456,7 +516,13 @@ void MAR::multiYStat(int y1,int y2){
     ofs <<exec(aCommand.c_str()) << ";";
     aCommand="cdo -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SD40") ;
     ofs <<exec(aCommand.c_str()) << ";";
+    aCommand="cdo -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SDG20") ;
+    ofs <<exec(aCommand.c_str()) << ";";
+    aCommand="cdo -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SDG25") ;
+    ofs <<exec(aCommand.c_str()) << ";";
     aCommand="cdo -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"FD") ;
+    ofs <<exec(aCommand.c_str()) << ";";
+    aCommand="cdo -s -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"FDG") ;
     ofs <<exec(aCommand.c_str()) << "\n";
     j++;
    }

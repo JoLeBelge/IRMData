@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
             ("input", po::value< std::string>(), "chemin d'accès et nom du fichier csv contenant les données de l'IRM")
             ("input2", po::value< std::string>(), "chemin d'accès et nom du fichier raster contenant les identifiant de chaque pixel= Raster Template")
             ("outDir", po::value< std::string>(), "dossier ou sera écrit les résultats")
-             ("mode", po::value<int>(), "mode pour export netcdf to raster : 1 grille rotationnée SOP, 2 grille IRM")
+             ("mode", po::value<int>(), "mode pour export netcdf to raster : 1 grille rotationnée SOP 5km de résolution, 2 grille IRM; 3 grille rotationnée résolution 7.5km")
             ;
 
     po::variables_map vm;
@@ -189,17 +189,28 @@ int main(int argc, char *argv[])
 
             std::cout << " MAR netcdf : passage de l'horaire au journalier" << std::endl;
             MAR mar(input,input2,grid,0);
-            //mar.hourly2daily();
-              mar.daily2monthly();
-           // mar.multiY(1991,2020);
+            mar.hourly2daily();
+            mar.daily2monthly();
+             //mar.multiY(1991,2020);
 
 
-            //mar.multiYStat(1991,2020);
+           // mar.multiYStat(1991,2020);
 
             //mar.multiY(1980,2010);
             //mar.multiYStat(1980,2010);
             //mar.multiY(2010,2020);
             //mar.multiYStat(2010,2020);
+
+
+            mar.multiY(2021,2050);
+            mar.multiYStat(2021,2050);
+
+            mar.multiYStat(2021,2050);
+
+            //mar.multiY(2051,2080);
+            mar.multiYStat(2051,2080);
+            //mar.multiY(2081,2100);
+            mar.multiYStat(2081,2100);
 
 
             break;

@@ -379,19 +379,20 @@ ncks --cnk_dmn y,55 --cnk_dmn x,66 --cnk_dmn time,1 MARv3.12-ERA5-1980.nc MARv3.
 
 ---------- grille à 7.5 km de résolution --------------------
 
+On change la grille sinon cdo output rale
 cdo griddes MARv3.12-2050-MIROC6-ssp245.nc > mar75km.txt
-
 suppression de grille 2
-
 sed -i "s/generic/lonlat/g" mar75km.txt
 
-Then use CDO to set the grid:
-
-
-outputf,%8.4g,80
-cdo outputtab,lon,lat,LON,LAT -selgrid,1 -setgrid,mar75km.txt -seltimestep,1 MARv3.12-2050-MIROC6-ssp245.nc
-
 cdo outputf,%8.4g,1 -selvar,LON,LAT -selgrid,1 -setgrid,mar75km.txt -seltimestep,1 MARv3.12-2050-MIROC6-ssp245.nc > MAR7.5kmLONLAT.csv
+modif à la main du fichier , import dans Qgis, extract valeur de zbio
+
+cdo --format nc -setvar,LON -setcode,1 -input,mar75km.txt grilleMAR75kmLON.nc < grilleMAR75kmLON.csv
+cdo --format nc -setvar,LAT -setcode,2 -input,mar75km.txt grilleMAR75kmLAT.nc < grilleMAR75kmLAT.csv
+cdo --format nc -setvar,zbio -setcode,3 -input,mar75km.txt grilleMAR75kmZBIO.nc < grilleMAR75kmZBIO.csv
+
+gdal_translate -of GTiff "NETCDF:grilleMAR75km.nc":zbio tmp.tif ok ça a l'air d'être bon
+cdo merge grilleMAR75kmLON.nc grilleMAR75kmLAT.nc grilleMAR75kmZBIO.nc grilleMAR75km.nc
 
 
 
