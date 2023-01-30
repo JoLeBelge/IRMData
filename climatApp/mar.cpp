@@ -39,7 +39,9 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
                 int year;
                 try
                 {
+                     if (mTypeGrid==SOP75){nbCharToRm=s.size()-13-3;}// -3 c'est pour .nc
                     std::string y = s.substr(s.size()-7-nbCharToRm,4);
+
                     std::string tmp;
                     tmp=s.substr(0,s.size()-7-nbCharToRm);
 
@@ -52,7 +54,7 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
 
                    // mBaseName=s.substr(0,s.size()-7-7);// -7 pour -hourly
                     std::cout << "année " << y << " fichier " << s << std::endl;
-                    std::cout << "baseName" << mBaseName<< std::endl;
+                    std::cout << "baseName  " << mBaseName<< std::endl;
                     year=std::stoi(y);
                     mYearNcdf.emplace(std::make_pair(year,s));
                     }
