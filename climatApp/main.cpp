@@ -189,19 +189,20 @@ int main(int argc, char *argv[])
 
             std::cout << " MAR netcdf : passage de l'horaire au journalier" << std::endl;
             MAR mar(input,input2,grid,0);
-            mar.hourly2daily();
-            mar.daily2monthly();
-             mar.multiY(1981,2010);
+            //mar.hourly2daily();
+            //mar.daily2monthly();
+             /*mar.multiY(1981,2010);
              mar.multiYStat(1981,2010);
              mar.multiY(1991,2020);
             mar.multiYStat(1991,2020);
-            /*mar.multiY(2021,2050);
-            mar.multiYStat(2021,2050);
-            mar.multiYStat(2021,2050);
+            mar.multiY(2021,2050);
+            mar.multiYStat(2021,2050);*/
+            if(1){
             mar.multiY(2051,2080);
             mar.multiYStat(2051,2080);
             mar.multiY(2081,2100);
-            mar.multiYStat(2081,2100);*/
+            mar.multiYStat(2081,2100);
+            }
 
             break;
         }
@@ -263,11 +264,11 @@ void processIRMData(){
         tfionn.exportMap("XWS_FionnDavid","WS");
     }
 
-    if (0){
+    if (1){
 
         //for (int y : vYears){
         // for (int m : vMonths){
-        for (int y :{2018,2019,2020}){
+        for (int y :{2014,2015,2016,2017,2018,2019,2020}){
             for (int m : {1,2,3,4,5,6,7,8,9,10,11,12}){
                 std::cout << " calcul valeur mensuelles pour " << y << "/" << m << std::endl;
                 if (1){
@@ -324,7 +325,7 @@ void processIRMData(){
         }
     }
     // 2021 08 13 moy trentenaire pour R et Température
-    if(1){
+    if(0){
         // carte annuelle:
         //dataOneDate da= d.dataAnnuel(year{1});
         //da.exportMap("P_30aire","P");
