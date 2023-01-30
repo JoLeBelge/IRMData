@@ -17,7 +17,7 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
 
     int nbCharToRm(0);
     if (mTypeGrid==SOP75){nbCharToRm=14;}
-    if (mTypeGrid==SOP75){nbCharToRm=5;}
+    if (mTypeGrid==SOP75){nbCharToRm=5;}// SOP75 avec ER5
 
     std::cout << "gestion fichiers mar depuis le répertoire " << aWd << std::endl;
     if(!boost::filesystem::exists(mOutDaily)){boost::filesystem::create_directory(mOutDaily);}
