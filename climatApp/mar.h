@@ -25,8 +25,8 @@ public:
     MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid=SOP,bool fromDaily=0);
 
     void rechunk();// car cdo est extrèmement lent si les données ne sont pas découpées celon l'axe des timestep ; cas des netcdf de la grille IRM
-    void hourly2daily();
-    void daily2monthly();
+    void hourly2daily(bool overwrite=0);
+    void daily2monthly(bool overwrite=0);
     void multiY(int y1,int y2);
     void multiYStat(int y1,int y2);
      std::string nameMultiY(int y1,int y2, std::string post="");

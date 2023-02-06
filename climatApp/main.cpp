@@ -33,7 +33,6 @@ typeGrid grid;
 
 void processIRMData();
 void processSAFRAN();
-
 void processECADData();
 
 // pour avoir ensemble une date, un identifiant de site et une position de site
@@ -188,16 +187,21 @@ int main(int argc, char *argv[])
 
 
             std::cout << " MAR netcdf : passage de l'horaire au journalier" << std::endl;
+            //MAR mar(input,input2,grid,0);
+            // from daily
             MAR mar(input,input2,grid,0);
             //mar.hourly2daily();
             //mar.daily2monthly();
-             /*mar.multiY(1981,2010);
+            if(1){
+             mar.multiY(1981,2010);
              mar.multiYStat(1981,2010);
              mar.multiY(1991,2020);
             mar.multiYStat(1991,2020);
+            }
+
+            if(0){
             mar.multiY(2021,2050);
-            mar.multiYStat(2021,2050);*/
-            if(1){
+            mar.multiYStat(2021,2050);
             mar.multiY(2051,2080);
             mar.multiYStat(2051,2080);
             mar.multiY(2081,2100);
