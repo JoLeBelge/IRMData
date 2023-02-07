@@ -41,6 +41,7 @@ FD; frost day nombre de jour avec TMin inférieur à 0 degré ; voir cdo_eca ECA
 
 FDG ; frost day mais avec TMean inférieur à 0 degré. Pareil que pour SDG20 et SDG25 ; pour les simulation 7.5km je n'ai pas de Tmin journalier.
 
+HPD : eca_r10mm Heavy precipitation days (nombre de jours avec précipitations supérieur à 10mm)
 
 ---------------------- commande gdal pour passer les raster à une résolution plus fine pour un affichage ayant un chouette rendu
 

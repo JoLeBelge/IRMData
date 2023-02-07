@@ -1,5 +1,6 @@
 #ifndef IRMDATA_H
 #define IRMDATA_H
+#include <netcdfcpp.h>
 #include "date.h"
 #include <string.h>
 #include <vector>
@@ -33,6 +34,9 @@ public:
     // Aurélien veux des données climatiques moyennes mais je n'ai pas encore les moyennes trentenaires, donc je fait la moyenne sur toute ces données là.
     dataOneDate moyAll();
     dataOneDate calculCarteMensuelTrentenaire(year y1, year y2, month m);
+
+    // pour pouvoir utiliser cdo et toute la puissance des netcdf
+    void saveNetCDF(std::string aOut);
 
 protected:
     std::map<year_month_day,dataOneDate> mVAllDates;

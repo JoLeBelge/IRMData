@@ -139,7 +139,7 @@ dataOneDate irmData::calculCarteMensuelTrentenaire(year y1, year y2, month m){
     for (auto & kv : mVAllDates){
         year_month_day curYmd=kv.first;
         if (curYmd.month()==m){
-        aVD.push_back(& kv.second);
+            aVD.push_back(& kv.second);
         }
     }
     // création d'un dataOneDate pour y mettre les valeurs mensuelles
@@ -188,17 +188,17 @@ dataOneDate irmData::getMax(year y, month m, bool allY){
 
     for (auto & kv : mVAllDates){
         year_month_day curYmd=kv.first;
-            // selection de toutes les dates qui sont antérieure dans l'année et qui font partie du mois
-       if (allY){
-        if (curYmd.year()==y && curYmd.month()<=m){
-            aVD.push_back(& kv.second);
+        // selection de toutes les dates qui sont antérieure dans l'année et qui font partie du mois
+        if (allY){
+            if (curYmd.year()==y && curYmd.month()<=m){
+                aVD.push_back(& kv.second);
+            }
+        }else{
+            // selection de toutes les dates de ce mois uniquement (maximum mensuel donc)
+            if (curYmd.year()==y && curYmd.month()==m){
+                aVD.push_back(& kv.second);
+            }
         }
-       }else{
-               // selection de toutes les dates de ce mois uniquement (maximum mensuel donc)
-           if (curYmd.year()==y && curYmd.month()==m){
-               aVD.push_back(& kv.second);
-           }
-       }
     }
     std::cout << " irmData::getMax " << y << " , " <<m <<" , nombre de dates ;" << aVD.size() << std::endl;
     // création d'un dataOneDate pour y mettre les valeurs maximum
@@ -219,13 +219,13 @@ dataOneDate irmData::getMax(std::vector<year_month_day> aYMDs){
     std::vector<dataOneDate*> aVD;
 
     for (year_month_day ymd : aYMDs){
-       if (mVAllDates.find(ymd)!=mVAllDates.end()){
+        if (mVAllDates.find(ymd)!=mVAllDates.end()){
 
             aVD.push_back(& mVAllDates.at(ymd));
 
-       }else{
-           std::cout << " attention, je n'ai pas trouvé la date " << ymd << " dans le catalogue irmData " << std::endl;
-       }
+        }else{
+            std::cout << " attention, je n'ai pas trouvé la date " << ymd << " dans le catalogue irmData " << std::endl;
+        }
     }
     std::cout << " irmData::getMax pour un vecteur de dates, nombre de dates trouvées;" << aVD.size() << std::endl;
     // création d'un dataOneDate pour y mettre les valeurs maximum
@@ -430,4 +430,52 @@ void dataOnePix::addOneDateDJ(dataOnePix * dop, double aSeuilDJ){
     if (DJTmean>0){
         Tmean+=DJTmean;
     }
+}
+
+void irmData::saveNetCDF(std::string aOut){
+    // ouvrir la grille IRM qui me sert de template (j'ai l'id du pixel dedans)
+    std::string grillepath("/home/jo/app/climat/doc/grilleIRMGDL.nc");
+    NcFile grille(grillepath.c_str(),NcFile::FileMode::ReadOnly,NULL,0,NcFile::FileFormat::Netcdf4);
+    NcVar *idVar=grille.get_var("ID");
+
+    if (!idVar->get(&var_in[0][0], 1, NLAT, NLON)){
+        std::cout << "getvarin bad\n" << std::endl;
+    }
+
+
+
+    int NTIME(2),NX(66),NY(55);
+
+    NcFile ncFile(aOut.c_str(),NcFile::FileMode::Replace);
+    // create 3 dimensions
+    NcDim * dimTime = ncFile.add_dim("time");
+    //grille de l'IRM
+    NcDim * dimX = ncFile.add_dim("X",66);
+    NcDim * dimY = ncFile.add_dim("Y",55);
+    // create a variable
+    NcVar* varTG  = ncFile.add_var("TG",ncFloat,dimTime,dimY,dimX);
+    float varbuf[NTIME][NY][NX];
+
+    //int i(0), inc(0);
+
+    for (int t = 0; t < NTIME; t++){
+        for (int y = 0; y < NY; y++){
+            for (int x = 0; x < NX; x++)
+            {
+                varbuf[t][y][x]=y*NX+x;
+
+                // trouver une méthode pour aller checher la bonne valeur
+                varbuf[t][y][x]=mVAllDates.begin()->second.getValForPix(y*x,"Tmean");
+            }
+        }
+    }
+
+    // ça c'est pour écrire toute les données d'un seul coup - je n'ai pas trouvé comment faire d'autre..
+    varTG->put(&varbuf[0][0][0],NTIME, NY,NX);
+    //varTG->put_rec( dimTime, &var_out );
+    //varTG->put(varbuf );
+    //varTG->put(var_out);
+    // on peut documenter les dimension ou les variables avec des attributs
+
+
 }

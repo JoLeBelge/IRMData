@@ -220,6 +220,10 @@ int main(int argc, char *argv[])
 void processIRMData(){
 
     irmData d(input);
+
+    // test export données trentenaires aux format netcdf - 2023 02
+    d.saveNetCDF("toto.nc");
+
     // donnée de vent
     /*for (int y :{2016,2017,2018,2019,2020,2021}){
         for (int m : {1,2,3,4,5,6,7,8,9,10,11,12}){
@@ -268,7 +272,7 @@ void processIRMData(){
         tfionn.exportMap("XWS_FionnDavid","WS");
     }
 
-    if (1){
+    if (0){
 
         //for (int y : vYears){
         // for (int m : vMonths){
