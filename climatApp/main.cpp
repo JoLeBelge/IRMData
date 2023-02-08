@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     if (vm.count("input2")) {input2=vm["input2"].as<std::string>();
         std::cout << " je vais utiliser le raster template de l'IRM " << input2 << std::endl;}
     if (vm.count("outDir")) {pathOut=vm["outDir"].as<std::string>();
-    std::cout << " j'écrirai les résutats dans le dossier " << pathOut << std::endl;}
+    std::cout << " j'écrirai les résutats dans le dossier/fichier " << pathOut << std::endl;}
 
 
     if (vm.count("outils")) {
@@ -222,7 +222,7 @@ void processIRMData(){
     irmData d(input);
 
     // test export données trentenaires aux format netcdf - 2023 02
-    d.saveNetCDF("toto.nc");
+    d.saveNetCDF(pathOut);
 
     // donnée de vent
     /*for (int y :{2016,2017,2018,2019,2020,2021}){

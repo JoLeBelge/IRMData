@@ -1,6 +1,6 @@
 #include "ecaddata.h"
 
-year_month_day baseymd = 1950_y/1/1;
+extern year_month_day baseymd;
 
 bool DG(0);
 

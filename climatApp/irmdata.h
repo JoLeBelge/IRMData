@@ -13,6 +13,8 @@
 #include "ogr_spatialref.h"
 #include <string>
 #include "utils.h"
+
+#include <boost/range/algorithm/remove_if.hpp>
 using namespace date;
 
 class dataOnePix;
@@ -40,6 +42,8 @@ public:
 
 protected:
     std::map<year_month_day,dataOneDate> mVAllDates;
+    std::vector<std::string> mVVars;// contient les variables qui sont lues du fichier csv
+    std::string mInPutFile;
 };
 
 class dataOneDate

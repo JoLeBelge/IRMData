@@ -13,6 +13,12 @@
 #include "ogr_spatialref.h"
 #include <string>
 #include "boost/filesystem.hpp"
+#include <boost/range/algorithm/remove_if.hpp>
+
+#include <boost/algorithm/string/classification.hpp> // Include boost::for is_any_of
+#include <boost/algorithm/string/split.hpp> // Include for boost::split
+
+#include "csv.h"
 
 // différent moyen d'aggréger les valeurs par mois
 enum typeGrid {SOP
@@ -23,6 +29,8 @@ enum typeGrid {SOP
 namespace qi = boost::spirit::qi;
 
 std::vector<std::vector<std::string>> parseCSV2V(std::string aFileIn, char aDelim);
+
+std::vector<std::vector<std::string>> parseCSV2V_quick(std::string aFileIn);
 
 
 void setGeoTMAR(std::string aRasterIn, typeGrid aGrid);

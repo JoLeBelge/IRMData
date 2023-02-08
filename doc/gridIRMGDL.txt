@@ -1,0 +1,19 @@
+#
+# gridID 1
+#
+gridtype  = generic
+gridsize  = 3630
+datatype  = float
+xsize     = 66
+ysize     = 55
+xname     = X
+xlongname = "x"
+xunits    = "m"
+yname     = Y
+ylongname = "y"
+yunits    = "m"
+xfirst    = -142500
+xinc      = 5000
+yfirst    = 6438014
+yinc      = -5000
+scanningMode = 64

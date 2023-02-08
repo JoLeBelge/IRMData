@@ -1,5 +1,6 @@
 #include "utils.h"
 
+
 std::vector<std::vector<std::string>> parseCSV2V(std::string aFileIn, char aDelim){
     qi::rule<std::string::const_iterator, std::string()> quoted_string = '"' >> *(qi::char_ - '"') >> '"';
     qi::rule<std::string::const_iterator, std::string()> valid_characters = qi::char_ - '"' - aDelim;
@@ -30,6 +31,38 @@ std::vector<std::vector<std::string>> parseCSV2V(std::string aFileIn, char aDeli
     } else {
         std::cout << "file " << aFileIn << " not found " <<std::endl;
     }
+    return aOut;
+}
+
+std::vector<std::vector<std::string>> parseCSV2V_quick(std::string aFileIn){
+
+    std::vector<std::vector<std::string>> aOut;
+    std::ifstream aFichier(aFileIn.c_str());
+    if(aFichier)
+    {
+        std::string aLine;
+        while(!aFichier.eof())
+        {
+            getline(aFichier,aLine,'\n');
+            if(aLine.size() != 0)
+            {
+                std::vector<std::string> result;
+                //boost::erase_all(aLine,"\"");
+
+                //aLine.erase(boost::remove_if(aLine, boost::is_any_of("\"")), aLine.end());
+
+                boost::split(result, aLine, boost::is_any_of(";"),boost::token_compress_on);
+
+                //std::cout << "nombre de token " << result.size() << std::endl;
+                // ajout d'un element au vecteur de vecteur
+                aOut.push_back(result);
+            }
+        }
+        aFichier.close();
+    } else {
+        std::cout << "file " << aFileIn << " not found " <<std::endl;
+    }
+
     return aOut;
 }
 
