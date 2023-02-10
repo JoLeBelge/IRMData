@@ -155,9 +155,13 @@ void exportRaster(std::string aNetCdfIn, std::string aRasterOut, typeGrid mode){
     switch (mode) {
     case SOP:
         setGeoTMAR(aRasterOut,mode);
+        break;
     case SOP75:
         setGeoTMAR(aRasterOut,mode);
-    case irm:{
+         break;
+
+    // irm et irmO
+    default:{
         // grille de l'IRM
         GDALAllRegister();
         if (boost::filesystem::exists(aRasterOut)){
@@ -169,6 +173,7 @@ void exportRaster(std::string aNetCdfIn, std::string aRasterOut, typeGrid mode){
             pInputRaster->SetSpatialRef(&oSRS);
             GDALClose(pInputRaster);
         }
+        break;
     }
     }
 

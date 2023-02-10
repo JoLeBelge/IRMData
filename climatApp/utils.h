@@ -24,6 +24,7 @@
 enum typeGrid {SOP
                ,irm
                ,SOP75
+               ,irmO
                    };
 
 namespace qi = boost::spirit::qi;

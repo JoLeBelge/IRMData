@@ -19,8 +19,11 @@ RO3 = Rainfall (after snow)
 MBET = Evapotranspiration
 MBSL = Sublimation from soil
 
-
 BHE2 ; moyenne de Soil Humidity content [tonne] pour les mois 4 à 9
+
+Attention, pour les observations griddées de l'IRM, BHE et BHE2 a une autre signification
+irm BHE=RF-ETP -yearsum -selmonth,4/9 --> P-ETP sur la période de végétation
+irm BHE2=RF-ETP -yearsum --> P-ETP sur l'année
 
 Ces deux indices de bilan hydrique estival sont différent du traditionnel P-ET0, car l'évatranspiration potentielle 0 considère la consommation d'eau d'une pelouse rase, alors que les indices calculé ici prennent en compte l'occupation du sol et donc la végétation en place qui n'est évidemment pas une pelouse rase.
   

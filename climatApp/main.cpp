@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
             ("input", po::value< std::string>(), "chemin d'accès et nom du fichier csv contenant les données de l'IRM")
             ("input2", po::value< std::string>(), "chemin d'accès et nom du fichier raster contenant les identifiant de chaque pixel= Raster Template")
             ("outDir", po::value< std::string>(), "dossier ou sera écrit les résultats")
-             ("mode", po::value<int>(), "mode pour export netcdf to raster : 1 grille rotationnée SOP 5km de résolution, 2 grille IRM; 3 grille rotationnée résolution 7.5km")
+            ("mode", po::value<int>(), "mode pour export netcdf to raster : 1 grille rotationnée SOP 5km de résolution, 2 grille IRM; 3 grille rotationnée résolution 7.5km")
             ;
 
     po::variables_map vm;
@@ -82,9 +82,10 @@ int main(int argc, char *argv[])
     GDALAllRegister();
     //std::string aInTuile,aInArbre,aOut;
     if (vm.count("mode")) {mode=vm["mode"].as<int>();
-    if (mode==1){grid=SOP;}
-    if (mode==2){grid=irm;}
-    if (mode==3){grid=SOP75;}
+        if (mode==1){grid=SOP;}
+        if (mode==2){grid=irm;}
+        if (mode==3){grid=SOP75;}
+        if (mode==4){grid=irmO;}
     }
 
     if (vm.count("input")) {input=vm["input"].as<std::string>();
@@ -93,7 +94,7 @@ int main(int argc, char *argv[])
     if (vm.count("input2")) {input2=vm["input2"].as<std::string>();
         std::cout << " je vais utiliser le raster template de l'IRM " << input2 << std::endl;}
     if (vm.count("outDir")) {pathOut=vm["outDir"].as<std::string>();
-    std::cout << " j'écrirai les résutats dans le dossier/fichier " << pathOut << std::endl;}
+        std::cout << " j'écrirai les résutats dans le dossier/fichier " << pathOut << std::endl;}
 
 
     if (vm.count("outils")) {
@@ -150,11 +151,11 @@ int main(int argc, char *argv[])
 
             if (boost::filesystem::exists(input)){
 
-                if (boost::filesystem::exists(input2)){
+                //if (boost::filesystem::exists(input2)){
 
-                    processIRMData();
-                } else {
-                    std::cout << " je ne peux rien faire car " << input2 << " n'existe pas..." <<std::endl;}
+                processIRMData();
+                /*} else {
+                    std::cout << " je ne peux rien faire car " << input2 << " n'existe pas..." <<std::endl;}*/
             } else {
                 std::cout << " je ne peux rien faire car " << input << " n'existe pas..." <<std::endl;
             }
@@ -181,7 +182,7 @@ int main(int argc, char *argv[])
         case 7:{
             // ./climatApp --outil 7 --input "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/" --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc"
             // ./climatApp --outil 7 --input "/home/jo/Documents/climat_MAR/MAR-IRM" --input2 "/home/jo/app/climat/doc/grilleIRMGDL.nc" --mode 2
-             // ./climatApp --outil 7 --input "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/" --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --mode 2
+            // ./climatApp --outil 7 --input "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/" --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --mode 2
 
 
 
@@ -193,20 +194,49 @@ int main(int argc, char *argv[])
             //mar.hourly2daily();
             //mar.daily2monthly();
             if(1){
-             mar.multiY(1981,2010);
-             mar.multiYStat(1981,2010);
-             mar.multiY(1991,2020);
-            mar.multiYStat(1991,2020);
+                mar.multiY(1981,2010);
+                mar.multiYStat(1981,2010);
+                mar.multiY(1991,2020);
+                mar.multiYStat(1991,2020);
             }
 
             if(0){
-            mar.multiY(2021,2050);
-            mar.multiYStat(2021,2050);
-            mar.multiY(2051,2080);
-            mar.multiYStat(2051,2080);
-            mar.multiY(2081,2100);
-            mar.multiYStat(2081,2100);
+                mar.multiY(2021,2050);
+                mar.multiYStat(2021,2050);
+                mar.multiY(2051,2080);
+                mar.multiYStat(2051,2080);
+                mar.multiY(2081,2100);
+                mar.multiYStat(2081,2100);
             }
+
+            break;
+        }
+        case 40:{
+            // travail sur un fichier netcdf de l'IRM, créé par l'outil 4 - il faut structurer tout ça comme les sorties MAR ; je dois donc faire des fichiers individuel pour chaque année.
+                MAR mar(input,input2,irmO,0);
+                //mar.hourly2daily();
+                //mar.daily2monthly();
+                if(1){
+                   // mar.multiY(2012,2020);
+                   // mar.multiYStat(2012,2020);
+
+                    //mar.multiY(1991,1991);
+                    //mar.multiYStat(1991,1991);
+                }
+                if(1){
+
+                    // comme VanderPerre et al., sauf que eux ont utilisé une grille de 500mètres.
+                    mar.multiY(1986,2005);
+                    mar.multiYStat(1986,2005);
+
+                    mar.multiY(2011,2020);
+                    mar.multiYStat(2011,2020);
+
+                    mar.multiY(1981,2010);
+                    mar.multiYStat(1981,2010);
+                    mar.multiY(1991,2020);
+                    mar.multiYStat(1991,2020);
+                }
 
             break;
         }
@@ -355,7 +385,7 @@ void processIRMData(){
             mens.exportMap("irmTmax_"+std::to_string(m),"Tmax");
             mens.exportMap("irmTmin_"+std::to_string(m),"Tmin");
             mens.exportMap("irmTminMin_"+std::to_string(m),"TminMin");
-           // mens.exportMap("irmP_"+std::to_string(m),"P");
+            // mens.exportMap("irmP_"+std::to_string(m),"P");
         }
     }
 
@@ -442,23 +472,23 @@ void processSAFRAN(){
         std::cout << " calcul valeur mensuelles pour " << y << "/" << m << std::endl;
 
         if(0){
-        dataOneDate mens=d.dataMensuel(year{y},month{m});
-        mens.exportMap("safranTmean_"+std::to_string(y)+"_"+std::to_string(m),"Tmean");
-        mens.exportMap("safranTmax_"+std::to_string(y)+"_"+std::to_string(m),"Tmax");
-        mens.exportMap("safranTmin_"+std::to_string(y)+"_"+std::to_string(m),"Tmin");
-        mens.exportMap("safranTminMin_"+std::to_string(y)+"_"+std::to_string(m),"TminMin");
-        //mens.exportMap("ETP_"+std::to_string(y)+"_"+std::to_string(m),"ETP");
-        mens.exportMap("safranP_"+std::to_string(y)+"_"+std::to_string(m),"P");
-        //mens.exportMap("R_"+std::to_string(y)+"_"+std::to_string(m),"R");
+            dataOneDate mens=d.dataMensuel(year{y},month{m});
+            mens.exportMap("safranTmean_"+std::to_string(y)+"_"+std::to_string(m),"Tmean");
+            mens.exportMap("safranTmax_"+std::to_string(y)+"_"+std::to_string(m),"Tmax");
+            mens.exportMap("safranTmin_"+std::to_string(y)+"_"+std::to_string(m),"Tmin");
+            mens.exportMap("safranTminMin_"+std::to_string(y)+"_"+std::to_string(m),"TminMin");
+            //mens.exportMap("ETP_"+std::to_string(y)+"_"+std::to_string(m),"ETP");
+            mens.exportMap("safranP_"+std::to_string(y)+"_"+std::to_string(m),"P");
+            //mens.exportMap("R_"+std::to_string(y)+"_"+std::to_string(m),"R");
         }
         if(1){
-        dataOneDate mens=d.calculCarteMensuelTrentenaire(year{2012},year{2020},month{m});
-        /*mens.exportMap("safranTmean_"+std::to_string(m),"Tmean");
+            dataOneDate mens=d.calculCarteMensuelTrentenaire(year{2012},year{2020},month{m});
+            /*mens.exportMap("safranTmean_"+std::to_string(m),"Tmean");
         mens.exportMap("safranTmax_"+std::to_string(m),"Tmax");
         mens.exportMap("safranTmin_"+std::to_string(m),"Tmin");
         mens.exportMap("safranTminMin_"+std::to_string(m),"TminMin");
         mens.exportMap("safranP_"+std::to_string(m),"P");*/
-         mens.exportMap("safranETP_"+std::to_string(m),"ETP");
+            mens.exportMap("safranETP_"+std::to_string(m),"ETP");
         }
     }
 

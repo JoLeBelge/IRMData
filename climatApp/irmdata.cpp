@@ -10,6 +10,8 @@ int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0), colWS(0),colP2(
 
 year_month_day baseymd = 1950_y/1/1;
 
+double NoD(-999);
+
 irmData::irmData(std::string aFileIRM):mInPutFile(aFileIRM)
 {
     std::cout << " création du catalogue irm " << std::endl;
@@ -22,14 +24,14 @@ irmData::irmData(std::string aFileIRM):mInPutFile(aFileIRM)
     for (int c(0);c<headerline.size();c++){
         std::string header=headerline.at(c);
         std::cout << header << " est la colonne " << c << std::endl;
-        if (header.find("GLOBAL RADIATION")!=std::string::npos){colR=c; mVVars.push_back("R");}
-        if (header.find("TEMPERATURE AVG")!=std::string::npos){colTmean=c;mVVars.push_back("Tmean");}
-        if (header.find("TEMPERATURE MAX")!=std::string::npos){colTmax=c;mVVars.push_back("Tmax");}
-        if (header.find("TEMPERATURE MIN")!=std::string::npos){colTmin=c;mVVars.push_back("Tmin");}
+        if (header.find("GLOBAL RADIATION")!=std::string::npos){colR=c; mVVars.push_back(std::make_pair("R","QQ"));}
+        if (header.find("TEMPERATURE AVG")!=std::string::npos){colTmean=c;mVVars.push_back(std::make_pair("Tmean","TG"));}
+        if (header.find("TEMPERATURE MAX")!=std::string::npos){colTmax=c;mVVars.push_back(std::make_pair("Tmax","TX"));}
+        if (header.find("TEMPERATURE MIN")!=std::string::npos){colTmin=c;mVVars.push_back(std::make_pair("Tmin","TN"));}
         //if (header=="PRESSURE (hPa)"){colP=c;}
-        if (header.find("PRECIPITATION (mm)")!=std::string::npos){colP=c;mVVars.push_back("P");}
-        if (header.find("ET")!=std::string::npos){colETP=c;mVVars.push_back("ETP");}
-        if (header.find("WIND SPEED")!=std::string::npos){colWS=c;mVVars.push_back("WS");}
+        if (header.find("PRECIPITATION (mm)")!=std::string::npos){colP=c;mVVars.push_back(std::make_pair("P","RF"));}
+        if (header.find("ET")!=std::string::npos){colETP=c;mVVars.push_back(std::make_pair("ETP","ETP"));}
+        if (header.find("WIND SPEED")!=std::string::npos){colWS=c;mVVars.push_back(std::make_pair("WS","WS"));}
 
     }
     std::cout << "Radiation colonne " << colR << " T mean colonne " << colTmean << " T max colonne " << colTmax << " T min colonne " << colTmin << "\n" << " Précipitation colonne " << colP << " ET0 colonne " << colETP << " , Wind speed colonne " << colWS << std::endl;
@@ -394,17 +396,17 @@ void dataOnePix::divide(int nb, int nbMois){
     }
 }
 
-dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(0),Tmax(0),Tmin(0),R(0),P(0),ETP(0),WS(0){
-    if(colTmean!=0){Tmean=std::stod(aLigne.at(colTmean));}
-    if(colTmax!=0){Tmax=std::stod(aLigne.at(colTmax));}
-    if(colTmin!=0){Tmin=std::stod(aLigne.at(colTmin));TminMin=Tmin;}
-    if(colR!=0){R=std::stod(aLigne.at(colR));}
-    if(colP!=0 && colP2==0){P=std::stod(aLigne.at(colP));}
+dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(NoD),Tmax(NoD),Tmin(NoD),R(NoD),ETP(NoD),P(NoD),WS(NoD),TminMin(100){
+    if(colTmean!=0){try{Tmean=std::stod(aLigne.at(colTmean));}catch (...) {}}
+    if(colTmax!=0){try{Tmax=std::stod(aLigne.at(colTmax));}catch (...) {}}
+    if(colTmin!=0){try{Tmin=std::stod(aLigne.at(colTmin));TminMin=Tmin;}catch (...) {}}
+    if(colR!=0){try{R=std::stod(aLigne.at(colR));}catch (...) {}}
+    if(colP!=0 && colP2==0){try{P=std::stod(aLigne.at(colP));}catch (...) {}}
     // précipitation liquide et neige , safran
-    if(colP!=0 && colP2!=0){P=std::stod(aLigne.at(colP))+std::stod(aLigne.at(colP2));}
+    if(colP!=0 && colP2!=0){try{P=std::stod(aLigne.at(colP))+std::stod(aLigne.at(colP2));}catch (...) {}}
 
-    if(colETP!=0){ETP=std::stod(aLigne.at(colETP));}
-    if(colWS!=0){WS=std::stod(aLigne.at(colWS));}
+    if(colETP!=0){try{ETP=std::stod(aLigne.at(colETP));}catch (...) {}}
+    if(colWS!=0){try{WS=std::stod(aLigne.at(colWS));}catch (...) {}}
 }
 
 void dataOnePix::addOneDate(dataOnePix * dop){
@@ -461,10 +463,11 @@ void irmData::saveNetCDF(std::string aOut){
     ncOut.add_att("institution","Ulg - Gembloux Agro-Bio Tech");
     std::string source="IRM -gridded observations from request "+mInPutFile;
     ncOut.add_att("data_source",source.c_str());
-    ncOut.add_att("gridXY","5km IRM Grid enlarged to include Grand Duché de Luxembourg");
+    ncOut.add_att("gridXY","5km IRM Grid enlarged to include Grand-Duché de Luxembourg");
+    ncOut.add_att("srcGridXY","+proj=lcc +lat_2=50.569898649999999 +lat_1=50.569898649999999 +lon_0=4.553615160000000 +units=m +no_defs +a=6371229.0 +es=0.0");
     ncOut.add_att("contact","Lisein Jonathan - liseinjon@hotmail.com");
-
     NcDim * dimTime = ncOut.add_dim("TIME");
+    ncOut.add_dim("bnds",2);
     //grille de l'IRM
     NcDim * dimX = ncOut.add_dim("X",NX);
     NcDim * dimY = ncOut.add_dim("Y",NY);
@@ -476,7 +479,6 @@ void irmData::saveNetCDF(std::string aOut){
     varTime->add_att("standard_name","time");
     varTime->add_att("time_origin","01-JAN-1950 00:00:00");
     varTime->add_att("bounds","TIME_bnds"); // https://daac.ornl.gov/submit/netcdfrequirements/
-    //NcVar* varTimeB  =
     ncOut.add_var("TIME_bnds",ncFloat,dimTime);
 
     float timebuf[NTIME];
@@ -491,46 +493,44 @@ void irmData::saveNetCDF(std::string aOut){
     varTime->put(&timebuf[0],NTIME);
 
     // create and populate the variables
-    for (std::string aVar : mVVars){
+    for (auto & pair : mVVars){
+        std::string aVar =pair.first;
         std::cout << "ajout variables " << aVar << std::endl;
-        NcVar* myvar  = ncOut.add_var(aVar.c_str(),ncFloat,dimTime,dimY,dimX);
-       // myvar->add_att("_FillValue",-999); NetCDF: Not a valid data type or _FillValue type mismatch
+        NcVar* myvar  = ncOut.add_var(pair.second.c_str(),ncDouble,dimTime,dimY,dimX);
 
-        float varbuf[NTIME][NY][NX];
-
-        //for (int t = 0; t < NTIME; t++){
+        // OLD - je n'ai toujour pas de solution pour une gestion propre des no data. Pour le moment ; tout les ND sont à -999 mais cdo les prends comme des données normale pour ses calcul
+        // en fait ncdump comprends bien que ce sont des no data, et cdo aussi. c'est juste que le outputf affiche les nd comme étant -999, ça m'avais perturbé
+        myvar->add_att("_FillValue",-999.0);
+        //myvar->add_att("valid_min",-100.0);
+        //myvar->add_att("valid_max",1000.0);
+        // sur longue série temporelle, je ne parvient pas à créer un tableau si grand. il faut chunker je suppose. par temps, c'est le plus logique
         t=0;
         for (auto & kv : mVAllDates){
-            std::cout << "time " << t << std::endl;
+            //std::cout << "time " << t << std::endl;
+            myvar->set_rec(dimTime,t);
+
+            float varbuf[NY][NX];
+            //float varbuf[1];
             for (int y = 0; y < NY; y++){
                 for (int x = 0; x < NX; x++)
                 {
-                    // le Y est à l'envers quand j'ouvre le netcdf dans Qgis; c'est du au fait que la grille n'est pas définie comme dans grilleIRMGDL.nc ou on donne l'extend et la résolution en Y qui est négative.
-                    //int pix_id=var_in[y][x];
-                    //varbuf[t][y][x]=pix_id;
-                    // méthode pour aller checher la bonne valeur
-                    //if (var_in[y][x]=!0){
-                    varbuf[t][y][x]=kv.second.getValForPix(var_in[y][x],aVar);
-                    //}
+                    varbuf[y][x]=kv.second.getValForPix(var_in[y][x],aVar);
                 }
             }
+            myvar->put_rec(dimTime,&varbuf[0][0]);
             t++;
         }
-        // std::cout << "put data"<< std::endl;
-        // ça c'est pour écrire toute les données d'un seul coup - je n'ai pas trouvé comment faire d'autre..
-        myvar->put(&varbuf[0][0][0],NTIME, NY,NX);
-    }
 
-    //varTG->put_rec( dimTime, &var_out );
-    //varTG->put(varbuf );
-    //varTG->put(var_out);
-    // on peut documenter les dimension ou les variables avec des attributs
+        // ça c'est pour écrire toute les données d'un seul coup - fonctionne pas si beaucoup de time..
+        //varbuf[t][y][x]=kv.second.getValForPix(var_in[y][x],aVar);
+        //myvar->put(&varbuf[0][0][0],NTIME, NY,NX);
+    }
 
     ncOut.close();
 
+    // le Y est à l'envers quand j'ouvre le netcdf dans Qgis; c'est du au fait que la grille n'est pas définie comme dans grilleIRMGDL.nc ou on donne l'extend et la résolution en Y qui est négative.
     std::string aGrid("/home/jo/app/climat/doc/gridIRMGDL.txt");
     std::string aCommand="cdo setgrid,"+aGrid+" " + aOutTmp + " " + aOut;
     std::cout << aCommand << std::endl;
     system(aCommand.c_str());
-
 }

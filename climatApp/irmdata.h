@@ -17,6 +17,8 @@
 #include <boost/range/algorithm/remove_if.hpp>
 using namespace date;
 
+
+
 class dataOnePix;
 class dataOneDate;
 class irmData;
@@ -42,7 +44,7 @@ public:
 
 protected:
     std::map<year_month_day,dataOneDate> mVAllDates;
-    std::vector<std::string> mVVars;// contient les variables qui sont lues du fichier csv
+    std::vector<std::pair<std::string,std::string>> mVVars;// contient les variables qui sont lues du fichier csv - le nom c++ - et le nom à sauver dans le netcdf
     std::string mInPutFile;
 };
 
@@ -73,7 +75,6 @@ private:
 class dataOnePix
 {
 public:
-    dataOnePix():Tmean(0),Tmax(0),Tmin(0),R(0),ETP(0),TminMin(100){}
     dataOnePix(std::vector<std::string> & aLigne);
     dataOnePix(dataOnePix * dop, double aSeuilDJ);
 
