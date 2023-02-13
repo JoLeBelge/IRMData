@@ -36,4 +36,5 @@ HEADERS+=\
     irmdata.h \
     mar.h \
     safrandata.h \
-    utils.h
+    utils.h \
+    csv.h

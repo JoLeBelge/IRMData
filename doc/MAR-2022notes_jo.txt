@@ -302,6 +302,16 @@ cdo merge -selvar,LON,LAT,SH,ID grilleIRMGDL.nc -setvar,zbio -setcode,5 -selvar,
 cdo merge grilleIRMGDLZbio.nc grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDLSH.nc grilleIRMGDLPixID.nc grilleIRMGDL.nc
 
 
+# 2023 02 08 ; corriger la grille IRM ou les identifiant de mes pixels avaient des doublons en bordure (jointure spatiale pas adéquate)
+
+select *, ROW_NUMBER() OVER(ORDER BY  ycoord desc, xcoord asc) as newID FROM grilleCompleteWGS84LONLATJoin_OK
+
+
+cdo --format nc -input,gridIRMGDL grilleIRMGDLPixIDOK.nc < grilleIRMGDLCompletePixID_OK.csv
+cdo setvar,ID -setcode,4 grilleIRMGDLPixIDOK.nc grilleIRMGDLPixIDOK.nc
+cdo merge grilleIRMGDLZbio.nc grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDLSH.nc grilleIRMGDLPixIDOK.nc grilleIRMGDLOK.nc
+
+
 # variables des netcdf sur la grille de l'IRM - ne sont pas les mêmes que celles sur la grille rotationnée
 
   -1  YYYY          Year [-]
@@ -393,6 +403,7 @@ cdo --format nc -setvar,zbio -setcode,3 -input,mar75km.txt grilleMAR75kmZBIO.nc 
 
 gdal_translate -of GTiff "NETCDF:grilleMAR75km.nc":zbio tmp.tif ok ça a l'air d'être bon
 cdo merge grilleMAR75kmLON.nc grilleMAR75kmLAT.nc grilleMAR75kmZBIO.nc grilleMAR75km.nc
+
 
 
 

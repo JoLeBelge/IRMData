@@ -1,5 +1,6 @@
 #ifndef IRMDATA_H
 #define IRMDATA_H
+#include <netcdfcpp.h>
 #include "date.h"
 #include <string.h>
 #include <vector>
@@ -12,7 +13,11 @@
 #include "ogr_spatialref.h"
 #include <string>
 #include "utils.h"
+
+#include <boost/range/algorithm/remove_if.hpp>
 using namespace date;
+
+
 
 class dataOnePix;
 class dataOneDate;
@@ -34,8 +39,13 @@ public:
     dataOneDate moyAll();
     dataOneDate calculCarteMensuelTrentenaire(year y1, year y2, month m);
 
+    // pour pouvoir utiliser cdo et toute la puissance des netcdf
+    void saveNetCDF(std::string aOut);
+
 protected:
     std::map<year_month_day,dataOneDate> mVAllDates;
+    std::vector<std::pair<std::string,std::pair<std::string,std::string>>> mVVars;// contient les variables qui sont lues du fichier csv - le nom c++ - et le nom à sauver dans le netcdf
+    std::string mInPutFile;
 };
 
 class dataOneDate
@@ -65,7 +75,6 @@ private:
 class dataOnePix
 {
 public:
-    dataOnePix():Tmean(0),Tmax(0),Tmin(0),R(0),ETP(0),TminMin(100){}
     dataOnePix(std::vector<std::string> & aLigne);
     dataOnePix(dataOnePix * dop, double aSeuilDJ);
 
@@ -74,7 +83,7 @@ public:
     void divide(int nb, int nbMois=1);
     void cat(){std::cout << "Tmean " << Tmean << " Tmax " << Tmax << " Tmin " << Tmin << " P " << P << std::endl;}
 //private:
-    double Tmean,Tmax,Tmin,R,ETP, P, WS, TminMin;
+    double Tmean,Tmax,Tmin,R,ETP, P, WS, TminMin, RelHumid, LAT,LON;
 };
 
 #endif // IRMDATA_H

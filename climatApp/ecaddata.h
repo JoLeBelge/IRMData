@@ -91,8 +91,6 @@ public:
         return aRes;
     }
 
-
-
     void calculDJPourDate();
     void exportCarteDJUneDate(year_month_day ymd);
 

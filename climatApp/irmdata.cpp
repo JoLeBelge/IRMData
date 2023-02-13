@@ -6,12 +6,17 @@ extern double baseDJ;
 extern std::string input2;
 extern std::string pathOut;
 // la colonne dans laquelle est stoqué l'info - varie d'un fichier à un autre.
-int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0), colWS(0),colP2(0);
+int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0), colWS(0),colP2(0),colRH(0);
 
-irmData::irmData(std::string aFileIRM)
+year_month_day baseymd = 1950_y/1/1;
+
+double NoD(-999);
+
+irmData::irmData(std::string aFileIRM):mInPutFile(aFileIRM)
 {
     std::cout << " création du catalogue irm " << std::endl;
-    std::vector<std::vector<std::string>> d=parseCSV2V(aFileIRM,';');
+    std::vector<std::vector<std::string>> d=parseCSV2V_quick(aFileIRM); // un peu plus rapide
+    //std::vector<std::vector<std::string>> d=parseCSV2V(aFileIRM,';');
     std::cout << " fichier texte parsé " << std::endl;
 
     // détermine les numéro de colonnes pour les variables
@@ -19,14 +24,15 @@ irmData::irmData(std::string aFileIRM)
     for (int c(0);c<headerline.size();c++){
         std::string header=headerline.at(c);
         std::cout << header << " est la colonne " << c << std::endl;
-        if (header.find("GLOBAL RADIATION")!=std::string::npos){colR=c;}
-        if (header.find("TEMPERATURE AVG")!=std::string::npos){colTmean=c;}
-        if (header.find("TEMPERATURE MAX")!=std::string::npos){colTmax=c;}
-        if (header.find("TEMPERATURE MIN")!=std::string::npos){colTmin=c;}
+        if (header.find("GLOBAL RADIATION")!=std::string::npos){colR=c; mVVars.push_back(std::make_pair("R",std::make_pair("QQ","GLOBAL RADIATION (kWh/m2/day)")));}
+        if (header.find("TEMPERATURE AVG")!=std::string::npos){colTmean=c;mVVars.push_back(std::make_pair("Tmean",std::make_pair("TG","TEMPERATURE AVG")));}
+        if (header.find("TEMPERATURE MAX")!=std::string::npos){colTmax=c;mVVars.push_back(std::make_pair("Tmax",std::make_pair("TX","TEMPERATURE MAX")));}
+        if (header.find("TEMPERATURE MIN")!=std::string::npos){colTmin=c;mVVars.push_back(std::make_pair("Tmin",std::make_pair("TN","TEMPERATURE MIN")));}
         //if (header=="PRESSURE (hPa)"){colP=c;}
-        if (header.find("PRECIPITATION (mm)")!=std::string::npos){colP=c;}
-        if (header.find("ET")!=std::string::npos){colETP=c;}
-        if (header.find("WIND SPEED")!=std::string::npos){colWS=c;}
+        if (header.find("PRECIPITATION (mm)")!=std::string::npos){colP=c;mVVars.push_back(std::make_pair("P",std::make_pair("RF","PRECIPITATION (mm)")));}
+        if (header.find("ET")!=std::string::npos){colETP=c;mVVars.push_back(std::make_pair("ETP",std::make_pair("ETP", "Evapotranspiration Potentielle ET0 ")));}
+        if (header.find("WIND SPEED")!=std::string::npos){colWS=c;mVVars.push_back(std::make_pair("WS",std::make_pair("WS","WIND SPEED (m/s)")));}
+        if (header.find("RELATIVE HUMIDITY")!=std::string::npos){colRH=c;mVVars.push_back(std::make_pair("RH",std::make_pair("RH","RELATIVE HUMIDITY (%)")));}
 
     }
     std::cout << "Radiation colonne " << colR << " T mean colonne " << colTmean << " T max colonne " << colTmax << " T min colonne " << colTmin << "\n" << " Précipitation colonne " << colP << " ET0 colonne " << colETP << " , Wind speed colonne " << colWS << std::endl;
@@ -35,12 +41,15 @@ irmData::irmData(std::string aFileIRM)
     for (int c(1); c<d.size();c++){
         std::vector<std::string> line=d.at(c);
         std::string aDate=line.at(0);
+        aDate.erase(boost::remove_if(aDate, boost::is_any_of("\"")), aDate.end());
 
         // fonctionnement polyvalent si moyenne trentenaire - en fonction de la taille du champ date il définit le mode de lecture des données
         int d(1),m(1),y(1);
+        //std::cout << "aDate " << aDate << std::endl;
         if (aDate.size()==5){
             d=std::stoi(aDate.substr(3,5));
             m=std::stoi(aDate.substr(0,2));
+            y=1991;
             //std::cout << " day " << d << " , " << " month " << m << std::endl;
         }else{
             // une nouvelle date
@@ -139,7 +148,7 @@ dataOneDate irmData::calculCarteMensuelTrentenaire(year y1, year y2, month m){
     for (auto & kv : mVAllDates){
         year_month_day curYmd=kv.first;
         if (curYmd.month()==m){
-        aVD.push_back(& kv.second);
+            aVD.push_back(& kv.second);
         }
     }
     // création d'un dataOneDate pour y mettre les valeurs mensuelles
@@ -188,17 +197,17 @@ dataOneDate irmData::getMax(year y, month m, bool allY){
 
     for (auto & kv : mVAllDates){
         year_month_day curYmd=kv.first;
-            // selection de toutes les dates qui sont antérieure dans l'année et qui font partie du mois
-       if (allY){
-        if (curYmd.year()==y && curYmd.month()<=m){
-            aVD.push_back(& kv.second);
+        // selection de toutes les dates qui sont antérieure dans l'année et qui font partie du mois
+        if (allY){
+            if (curYmd.year()==y && curYmd.month()<=m){
+                aVD.push_back(& kv.second);
+            }
+        }else{
+            // selection de toutes les dates de ce mois uniquement (maximum mensuel donc)
+            if (curYmd.year()==y && curYmd.month()==m){
+                aVD.push_back(& kv.second);
+            }
         }
-       }else{
-               // selection de toutes les dates de ce mois uniquement (maximum mensuel donc)
-           if (curYmd.year()==y && curYmd.month()==m){
-               aVD.push_back(& kv.second);
-           }
-       }
     }
     std::cout << " irmData::getMax " << y << " , " <<m <<" , nombre de dates ;" << aVD.size() << std::endl;
     // création d'un dataOneDate pour y mettre les valeurs maximum
@@ -219,13 +228,13 @@ dataOneDate irmData::getMax(std::vector<year_month_day> aYMDs){
     std::vector<dataOneDate*> aVD;
 
     for (year_month_day ymd : aYMDs){
-       if (mVAllDates.find(ymd)!=mVAllDates.end()){
+        if (mVAllDates.find(ymd)!=mVAllDates.end()){
 
             aVD.push_back(& mVAllDates.at(ymd));
 
-       }else{
-           std::cout << " attention, je n'ai pas trouvé la date " << ymd << " dans le catalogue irmData " << std::endl;
-       }
+        }else{
+            std::cout << " attention, je n'ai pas trouvé la date " << ymd << " dans le catalogue irmData " << std::endl;
+        }
     }
     std::cout << " irmData::getMax pour un vecteur de dates, nombre de dates trouvées;" << aVD.size() << std::endl;
     // création d'un dataOneDate pour y mettre les valeurs maximum
@@ -351,7 +360,7 @@ void dataOneDate::exportMap(std::string aOut,std::string aVar){
 }
 
 double dataOneDate::getValForPix(int pixel_id,std::string aVar){
-    double aRes(0);
+    double aRes(-999);
     if (mVData.find(pixel_id)!=mVData.end()){
         if (aVar=="Tmean"){
             aRes=mVData.at(pixel_id).Tmean;
@@ -388,17 +397,18 @@ void dataOnePix::divide(int nb, int nbMois){
     }
 }
 
-dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(0),Tmax(0),Tmin(0),R(0),P(0),ETP(0),WS(0){
-    if(colTmean!=0){Tmean=std::stod(aLigne.at(colTmean));}
-    if(colTmax!=0){Tmax=std::stod(aLigne.at(colTmax));}
-    if(colTmin!=0){Tmin=std::stod(aLigne.at(colTmin));TminMin=Tmin;}
-    if(colR!=0){R=std::stod(aLigne.at(colR));}
-    if(colP!=0 && colP2==0){P=std::stod(aLigne.at(colP));}
+dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(NoD),Tmax(NoD),Tmin(NoD),R(NoD),ETP(NoD),P(NoD),WS(NoD),TminMin(100),RelHumid(0),LAT(0),LON(0){
+    if(colTmean!=0){try{Tmean=std::stod(aLigne.at(colTmean));}catch (...) {}}
+    if(colTmax!=0){try{Tmax=std::stod(aLigne.at(colTmax));}catch (...) {}}
+    if(colTmin!=0){try{Tmin=std::stod(aLigne.at(colTmin));TminMin=Tmin;}catch (...) {}}
+    if(colR!=0){try{R=std::stod(aLigne.at(colR));}catch (...) {}}
+    if(colP!=0 && colP2==0){try{P=std::stod(aLigne.at(colP));}catch (...) {}}
     // précipitation liquide et neige , safran
-    if(colP!=0 && colP2!=0){P=std::stod(aLigne.at(colP))+std::stod(aLigne.at(colP2));}
+    if(colP!=0 && colP2!=0){try{P=std::stod(aLigne.at(colP))+std::stod(aLigne.at(colP2));}catch (...) {}}
 
-    if(colETP!=0){ETP=std::stod(aLigne.at(colETP));}
-    if(colWS!=0){WS=std::stod(aLigne.at(colWS));}
+    if(colETP!=0){try{ETP=std::stod(aLigne.at(colETP));}catch (...) {}}
+    if(colWS!=0){try{WS=std::stod(aLigne.at(colWS));}catch (...) {}}
+    if(colRH!=0){try{RelHumid=std::stod(aLigne.at(colRH));}catch (...) {}}
 }
 
 void dataOnePix::addOneDate(dataOnePix * dop){
@@ -430,4 +440,100 @@ void dataOnePix::addOneDateDJ(dataOnePix * dop, double aSeuilDJ){
     if (DJTmean>0){
         Tmean+=DJTmean;
     }
+}
+
+void irmData::saveNetCDF(std::string aOut){
+    int NX(66),NY(55);
+    std::string aOutTmp=aOut+"-tmp.nc";
+
+    // GRILLE IRM ---------------------------------
+    // ouvrir la grille IRM qui me sert de template (j'ai l'id du pixel dedans) -- Attention, il y a un effet de bord et plusieurs pixels ont le même id! à corriger assez vite
+    std::string grillepath("/home/jo/app/climat/doc/grilleIRMGDL.nc");
+    NcFile grille(grillepath.c_str(),NcFile::FileMode::ReadOnly,NULL,0,NcFile::FileFormat::Netcdf4);
+    NcVar *idVar=grille.get_var("ID");
+    float var_in[NY][NX];
+    if (!idVar->get(&var_in[0][0], 1, NY, NX)){
+        std::cout << "getvarin bad\n" << std::endl;
+    }
+
+    // CREATION NOUVEAU NETCDF  ---------------------------------
+    int NTIME(mVAllDates.size());
+    std::cout << "total de " << NTIME << " TIMES " << std::endl;
+
+    NcFile ncOut(aOutTmp.c_str(),NcFile::FileMode::Replace);
+
+    ncOut.add_att("institution","Ulg - Gembloux Agro-Bio Tech");
+    std::string source="IRM -gridded observations from request "+mInPutFile;
+    ncOut.add_att("data_source",source.c_str());
+    ncOut.add_att("gridXY","5km IRM Grid enlarged to include Grand-Duché de Luxembourg");
+    ncOut.add_att("srcGridXY","+proj=lcc +lat_2=50.569898649999999 +lat_1=50.569898649999999 +lon_0=4.553615160000000 +units=m +no_defs +a=6371229.0 +es=0.0");
+    ncOut.add_att("contact","Lisein Jonathan - liseinjon@hotmail.com");
+    NcDim * dimTime = ncOut.add_dim("TIME");
+    ncOut.add_dim("bnds",2);
+    //grille de l'IRM
+    NcDim * dimX = ncOut.add_dim("X",NX);
+    NcDim * dimY = ncOut.add_dim("Y",NY);
+
+    // variable TIME (pas dimension mais variable associée)
+    NcVar* varTime  = ncOut.add_var("TIME",ncFloat,dimTime);
+    // gdal_translate ne parviens pas à comprendre que ma variable time contient les date de la dimension time. mais cdo comprend bien, c'est ce qui compte
+    varTime->add_att("units","days since 1950-01-01 00:00:00");
+    varTime->add_att("standard_name","time");
+    varTime->add_att("time_origin","01-JAN-1950 00:00:00");
+    varTime->add_att("bounds","TIME_bnds"); // https://daac.ornl.gov/submit/netcdfrequirements/
+    ncOut.add_var("TIME_bnds",ncFloat,dimTime);
+
+    float timebuf[NTIME];
+    int t(0);
+    for (auto & kv : mVAllDates){
+        year_month_day ymd = kv.first;
+        days d=(sys_days{ymd}-sys_days{baseymd});
+        //std::cout <<"jour " <<  d.count()<< std::endl;
+        timebuf[t]=d.count();
+        t++;
+    }
+    varTime->put(&timebuf[0],NTIME);
+
+    // create and populate the variables
+    for (auto & pair : mVVars){
+        std::string aVar =pair.first;
+        std::cout << "ajout variables " << aVar << std::endl;
+        NcVar* myvar  = ncOut.add_var(pair.second.first.c_str(),ncDouble,dimTime,dimY,dimX);
+        myvar->add_att("nom",pair.second.second.c_str());
+
+        // OLD - je n'ai toujour pas de solution pour une gestion propre des no data. Pour le moment ; tout les ND sont à -999 mais cdo les prends comme des données normale pour ses calcul
+        // en fait ncdump comprends bien que ce sont des no data, et cdo aussi. c'est juste que le outputf affiche les nd comme étant -999, ça m'avais perturbé
+        myvar->add_att("_FillValue",-999.0);
+        //myvar->add_att("valid_min",-100.0);
+        //myvar->add_att("valid_max",1000.0);
+        // sur longue série temporelle, je ne parvient pas à créer un tableau si grand. il faut chunker je suppose. par temps, c'est le plus logique
+        t=0;
+        for (auto & kv : mVAllDates){
+            //std::cout << "time " << t << std::endl;
+            myvar->set_rec(dimTime,t);
+
+            float varbuf[NY][NX];
+            //float varbuf[1];
+            for (int y = 0; y < NY; y++){
+                for (int x = 0; x < NX; x++)
+                {
+                    varbuf[y][x]=kv.second.getValForPix(var_in[y][x],aVar);
+                }
+            }
+            myvar->put_rec(dimTime,&varbuf[0][0]);
+            t++;
+        }
+
+        // ça c'est pour écrire toute les données d'un seul coup - fonctionne pas si beaucoup de time..
+        //varbuf[t][y][x]=kv.second.getValForPix(var_in[y][x],aVar);
+        //myvar->put(&varbuf[0][0][0],NTIME, NY,NX);
+    }
+
+    ncOut.close();
+
+    // le Y est à l'envers quand j'ouvre le netcdf dans Qgis; c'est du au fait que la grille n'est pas définie comme dans grilleIRMGDL.nc ou on donne l'extend et la résolution en Y qui est négative.
+    std::string aGrid("/home/jo/app/climat/doc/gridIRMGDL.txt");
+    std::string aCommand="cdo setgrid,"+aGrid+" " + aOutTmp + " " + aOut;
+    std::cout << aCommand << std::endl;
+    system(aCommand.c_str());
 }
