@@ -344,13 +344,18 @@ void MAR::multiYStat(int y1,int y2){
     bool compute(1);
     if (compute){
         // bug sur TS de 30 ans. Le faire par petites étapes? par tranches de 10ans? non résoudre le prblem, en gardant la taille des fichiers pas trop élevée (moins de variables dedans)
-        aCommand="cdo -s -ydaymean "+ nameMultiY(y1,y2,"dailyTG")+" "+ nameMultiY(y1,y2,"ydaymeanTG");
+        // si je ne retire pas le 29 février avec -del29feb , le calcul de GSL me retourne de la merde pour 1986-2005 car l'année 2004 est une lep year
+        // bof, retirer le 29 fevrier fou la merde quand meme, mais ça ressemble à un bug que je vais contourner en choisisant une année
+        // fonctionne pas...
+
+        //aCommand="cdo -s -ydaymean -selyear,"+std::to_string(y2)+ +" " +nameMultiY(y1,y2,"dailyTG")+" "+ nameMultiY(y1,y2,"ydaymeanTG");
+        aCommand="cdo -s -ydaymean " + nameMultiY(y1,y2,"dailyTG")+" "+ nameMultiY(y1,y2,"ydaymeanTG");
         std::cout << aCommand << std::endl;
         system(aCommand.c_str());
-        aCommand="cdo -s -ydaymean "+ nameMultiY(y1,y2,"dailyTX")+" "+ nameMultiY(y1,y2,"ydaymeanTX");
+        aCommand="cdo -s -ydaymean -del29feb "+ nameMultiY(y1,y2,"dailyTX")+" "+ nameMultiY(y1,y2,"ydaymeanTX");
         std::cout << aCommand << std::endl;
         system(aCommand.c_str());
-        aCommand="cdo -s -ydaymean "+ nameMultiY(y1,y2,"dailyTN")+" "+ nameMultiY(y1,y2,"ydaymeanTN");
+        aCommand="cdo -s -ydaymean -del29feb "+ nameMultiY(y1,y2,"dailyTN")+" "+ nameMultiY(y1,y2,"ydaymeanTN");
         std::cout << aCommand << std::endl;
         system(aCommand.c_str());
 
@@ -430,6 +435,23 @@ void MAR::multiYStat(int y1,int y2){
         // growing season length
 
         aCommand="cdo -s -setvar,GSL -eca_gsl,6,8 -expr,'TG="+Tvar+"G+274.15;' -vertmean -selvar,"+Tvar+"G "+nameMultiY(y1,y2,"ydaymeanTG") +" -gec,0 "+zbioNc + " "+ nameMultiY(y1,y2,"GSL");
+        //std::cout << aCommand << std::endl;
+
+        // trop de process pipé pour cdo.. je dois donc faire des fichiers temporaires et les compiler
+        aCommand="cdo -s -copy ";
+        std::string aCommand2;
+        for (auto kv : mYearNcdf){
+            if (kv.first>y1-1 && kv.first < y2+1){
+                std::string aIn=dailyFile(kv.first);
+                //aCommand2 = "cdo -setvar,GSL -eca_gsl,7,8.5 -expr,'TG="+Tvar+"G+274.15;' -vertmean -selvar,"+Tvar+"G "+  dailyFile(kv.first)+" -gec,0 "+zbioNc +" "+ nameMultiY(y1,y2,"GSL-tmp"+std::to_string(kv.first));
+                aCommand2 = "cdo -setvar,GSL -eca_gsl,7,8.5 -expr,'TG="+Tvar+"G+274.15;' -vertmean -selvar,"+Tvar+"G "+  dailyFile(kv.first)+" -gec,0 "+zbioNc +" "+ nameMultiY(y1,y2,"GSL-tmp"+std::to_string(kv.first));
+
+                std::cout << aCommand2 << std::endl;
+            system(aCommand2.c_str());
+            aCommand += " "+ nameMultiY(y1,y2,"GSL-tmp"+std::to_string(kv.first));
+            }
+        }
+        aCommand += " " + nameMultiY(y1,y2,"GSL");
         std::cout << aCommand << std::endl;
         system(aCommand.c_str());
         exportRaster("'" +nameMultiY(y1,y2,"GSL")+"':GSL",nameRastMultiY(y1,y2,"GSL"),mTypeGrid);
@@ -519,7 +541,6 @@ void MAR::multiYStat(int y1,int y2){
         // autant de bandes que d'année!
         exportRaster(nameMultiY(y1,y2,"SDG25")+":SD",nameRastMultiY(y1,y2,"SDG25"),mTypeGrid);
 
-
         //eca_r10mm Heavy precipitation days
         aCommand="cdo -s copy ";
         for (auto kv : mYearNcdf){
@@ -531,7 +552,7 @@ void MAR::multiYStat(int y1,int y2){
         aCommand += " " + nameMultiY(y1,y2,"HPD");
         system(aCommand.c_str());
         // autant de bandes que d'année!
-        exportRaster(nameMultiY(y1,y2,"HPD")+":HPD",nameRastMultiY(y1,y2,"HPD"),mTypeGrid);
+        //exportRaster(nameMultiY(y1,y2,"HPD")+":HPD",nameRastMultiY(y1,y2,"HPD"),mTypeGrid);
 
     }
 
@@ -542,7 +563,7 @@ void MAR::multiYStat(int y1,int y2){
         std::ofstream ofs (aTable, std::ofstream::out);
         ofs << "ZBIO;MBRR;TTG;TTX;TTN;m4_9MBRR;m4_9TTG;BHE;BHE2;GSL(6,8);SD30;SD40;SDG20;SDG25;FD;FDG;HPD\n";
         // system(aCommand.c_str());
-        std::vector<std::string> vZbio={"Ardenne","HA et HCO", "HA", "HCO", "BMA","Oesling", "Gutland",
+        std::vector<std::string> vZbio={"RW","Ardenne","HA et HCO", "HA", "HCO", "BMA","Oesling", "Gutland",
         "Basse Lorraine",
         "Fagne - Famenne - Calestienne",
         "Haute Lorraine",
@@ -551,7 +572,7 @@ void MAR::multiYStat(int y1,int y2){
         "Condroz - Sambre et Meuse",
         "Thiérache"};
         int j(0);
-        for (std::string zbio : {"mask=(ZBIO==10)+(ZBIO==1)+(ZBIO==2);","mask=(ZBIO==10)?1:(ZBIO==1);","mask=ZBIO==10;","mask=ZBIO==1;","mask=ZBIO==2;","mask=(ZBIO==11)+(ZBIO==12)+(ZBIO==13);","mask=(ZBIO==14)+(ZBIO==15)+(ZBIO==16)+(ZBIO==17);","mask=ZBIO==3;","mask=ZBIO==4;","mask=ZBIO==5;","mask=ZBIO==6;","mask=ZBIO==7;","mask=ZBIO==8;","mask=ZBIO==9;"}){
+        for (std::string zbio : {"mask=ZBIO!=0;","mask=(ZBIO==10)+(ZBIO==1)+(ZBIO==2);","mask=(ZBIO==10)?1:(ZBIO==1);","mask=ZBIO==10;","mask=ZBIO==1;","mask=ZBIO==2;","mask=(ZBIO==11)+(ZBIO==12)+(ZBIO==13);","mask=(ZBIO==14)+(ZBIO==15)+(ZBIO==16)+(ZBIO==17);","mask=ZBIO==3;","mask=ZBIO==4;","mask=ZBIO==5;","mask=ZBIO==6;","mask=ZBIO==7;","mask=ZBIO==8;","mask=ZBIO==9;"}){
 
             // ofs <<std::to_string(zbio) << ";";
             //ofs <<"'"<<zbio << "';";
@@ -576,7 +597,7 @@ void MAR::multiYStat(int y1,int y2){
             // plusieur date parfois dans le netcdf MAR, je prend la dernière 1990-12-31
             switch (mTypeGrid){
             case irmO: aCommand="cdo -s -W -outputf,%8.6g,80 -selvar,GSL -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"GSL") ; break;
-            default: aCommand="cdo -s -W -outputf,%8.6g,80 -selvar,GSL -seldate,"+std::to_string(y2)+"-12-31 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"GSL") ; break;
+            default: aCommand="cdo -s -W -outputf,%8.6g,80 -selvar,GSL -seldate,"+std::to_string(y2)+"-12-31 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"GSL") ; break;
             }
              // std::cout << aCommand << std::endl;
             ofs <<exec(aCommand.c_str()) << ";";

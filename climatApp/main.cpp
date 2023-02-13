@@ -226,16 +226,18 @@ int main(int argc, char *argv[])
                 if(1){
 
                     // comme VanderPerre et al., sauf que eux ont utilisé une grille de 500mètres.
-                    mar.multiY(1986,2005);
+                    /*mar.multiY(1986,2005);
                     mar.multiYStat(1986,2005);
 
                     mar.multiY(2011,2020);
                     mar.multiYStat(2011,2020);
+                     */
 
-                    mar.multiY(1981,2010);
+                    //mar.multiY(1981,2010);
                     mar.multiYStat(1981,2010);
-                    mar.multiY(1991,2020);
+                    //mar.multiY(1991,2020);
                     mar.multiYStat(1991,2020);
+
                 }
 
             break;

@@ -6,7 +6,7 @@ extern double baseDJ;
 extern std::string input2;
 extern std::string pathOut;
 // la colonne dans laquelle est stoqué l'info - varie d'un fichier à un autre.
-int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0), colWS(0),colP2(0);
+int colTmean(0),colTmax(0),colTmin(0),colR(0),colETP(0),colP(0), colWS(0),colP2(0),colRH(0);
 
 year_month_day baseymd = 1950_y/1/1;
 
@@ -24,14 +24,15 @@ irmData::irmData(std::string aFileIRM):mInPutFile(aFileIRM)
     for (int c(0);c<headerline.size();c++){
         std::string header=headerline.at(c);
         std::cout << header << " est la colonne " << c << std::endl;
-        if (header.find("GLOBAL RADIATION")!=std::string::npos){colR=c; mVVars.push_back(std::make_pair("R","QQ"));}
-        if (header.find("TEMPERATURE AVG")!=std::string::npos){colTmean=c;mVVars.push_back(std::make_pair("Tmean","TG"));}
-        if (header.find("TEMPERATURE MAX")!=std::string::npos){colTmax=c;mVVars.push_back(std::make_pair("Tmax","TX"));}
-        if (header.find("TEMPERATURE MIN")!=std::string::npos){colTmin=c;mVVars.push_back(std::make_pair("Tmin","TN"));}
+        if (header.find("GLOBAL RADIATION")!=std::string::npos){colR=c; mVVars.push_back(std::make_pair("R",std::make_pair("QQ","GLOBAL RADIATION (kWh/m2/day)")));}
+        if (header.find("TEMPERATURE AVG")!=std::string::npos){colTmean=c;mVVars.push_back(std::make_pair("Tmean",std::make_pair("TG","TEMPERATURE AVG")));}
+        if (header.find("TEMPERATURE MAX")!=std::string::npos){colTmax=c;mVVars.push_back(std::make_pair("Tmax",std::make_pair("TX","TEMPERATURE MAX")));}
+        if (header.find("TEMPERATURE MIN")!=std::string::npos){colTmin=c;mVVars.push_back(std::make_pair("Tmin",std::make_pair("TN","TEMPERATURE MIN")));}
         //if (header=="PRESSURE (hPa)"){colP=c;}
-        if (header.find("PRECIPITATION (mm)")!=std::string::npos){colP=c;mVVars.push_back(std::make_pair("P","RF"));}
-        if (header.find("ET")!=std::string::npos){colETP=c;mVVars.push_back(std::make_pair("ETP","ETP"));}
-        if (header.find("WIND SPEED")!=std::string::npos){colWS=c;mVVars.push_back(std::make_pair("WS","WS"));}
+        if (header.find("PRECIPITATION (mm)")!=std::string::npos){colP=c;mVVars.push_back(std::make_pair("P",std::make_pair("RF","PRECIPITATION (mm)")));}
+        if (header.find("ET")!=std::string::npos){colETP=c;mVVars.push_back(std::make_pair("ETP",std::make_pair("ETP", "Evapotranspiration Potentielle ET0 ")));}
+        if (header.find("WIND SPEED")!=std::string::npos){colWS=c;mVVars.push_back(std::make_pair("WS",std::make_pair("WS","WIND SPEED (m/s)")));}
+        if (header.find("RELATIVE HUMIDITY")!=std::string::npos){colRH=c;mVVars.push_back(std::make_pair("RH",std::make_pair("RH","RELATIVE HUMIDITY (%)")));}
 
     }
     std::cout << "Radiation colonne " << colR << " T mean colonne " << colTmean << " T max colonne " << colTmax << " T min colonne " << colTmin << "\n" << " Précipitation colonne " << colP << " ET0 colonne " << colETP << " , Wind speed colonne " << colWS << std::endl;
@@ -396,7 +397,7 @@ void dataOnePix::divide(int nb, int nbMois){
     }
 }
 
-dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(NoD),Tmax(NoD),Tmin(NoD),R(NoD),ETP(NoD),P(NoD),WS(NoD),TminMin(100){
+dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(NoD),Tmax(NoD),Tmin(NoD),R(NoD),ETP(NoD),P(NoD),WS(NoD),TminMin(100),RelHumid(0),LAT(0),LON(0){
     if(colTmean!=0){try{Tmean=std::stod(aLigne.at(colTmean));}catch (...) {}}
     if(colTmax!=0){try{Tmax=std::stod(aLigne.at(colTmax));}catch (...) {}}
     if(colTmin!=0){try{Tmin=std::stod(aLigne.at(colTmin));TminMin=Tmin;}catch (...) {}}
@@ -407,6 +408,7 @@ dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(NoD),Tmax(NoD),T
 
     if(colETP!=0){try{ETP=std::stod(aLigne.at(colETP));}catch (...) {}}
     if(colWS!=0){try{WS=std::stod(aLigne.at(colWS));}catch (...) {}}
+    if(colRH!=0){try{RelHumid=std::stod(aLigne.at(colRH));}catch (...) {}}
 }
 
 void dataOnePix::addOneDate(dataOnePix * dop){
@@ -496,7 +498,8 @@ void irmData::saveNetCDF(std::string aOut){
     for (auto & pair : mVVars){
         std::string aVar =pair.first;
         std::cout << "ajout variables " << aVar << std::endl;
-        NcVar* myvar  = ncOut.add_var(pair.second.c_str(),ncDouble,dimTime,dimY,dimX);
+        NcVar* myvar  = ncOut.add_var(pair.second.first.c_str(),ncDouble,dimTime,dimY,dimX);
+        myvar->add_att("nom",pair.second.second.c_str());
 
         // OLD - je n'ai toujour pas de solution pour une gestion propre des no data. Pour le moment ; tout les ND sont à -999 mais cdo les prends comme des données normale pour ses calcul
         // en fait ncdump comprends bien que ce sont des no data, et cdo aussi. c'est juste que le outputf affiche les nd comme étant -999, ça m'avais perturbé

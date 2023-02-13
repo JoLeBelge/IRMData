@@ -44,7 +44,7 @@ public:
 
 protected:
     std::map<year_month_day,dataOneDate> mVAllDates;
-    std::vector<std::pair<std::string,std::string>> mVVars;// contient les variables qui sont lues du fichier csv - le nom c++ - et le nom à sauver dans le netcdf
+    std::vector<std::pair<std::string,std::pair<std::string,std::string>>> mVVars;// contient les variables qui sont lues du fichier csv - le nom c++ - et le nom à sauver dans le netcdf
     std::string mInPutFile;
 };
 
@@ -83,7 +83,7 @@ public:
     void divide(int nb, int nbMois=1);
     void cat(){std::cout << "Tmean " << Tmean << " Tmax " << Tmax << " Tmin " << Tmin << " P " << P << std::endl;}
 //private:
-    double Tmean,Tmax,Tmin,R,ETP, P, WS, TminMin;
+    double Tmean,Tmax,Tmin,R,ETP, P, WS, TminMin, RelHumid, LAT,LON;
 };
 
 #endif // IRMDATA_H
