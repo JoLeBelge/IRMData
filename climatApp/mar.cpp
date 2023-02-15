@@ -393,8 +393,11 @@ void MAR::multiYStat(int y1,int y2){
         exportRaster("'" +nameMultiY(y1,y2,"TTN")+"':"+Tvar+"N",nameRastMultiY(y1,y2,"TTN"),mTypeGrid);
 
         // somme des précipitation de avril à septembre
+
         aCommand="cdo -s -yearsum -selmonth,4/9 -selvar,"+Pvar+" " + nameMultiY(y1,y2,"G") + " " + nameMultiY(y1,y2,"m4_9MBRRS");
+
         std::cout << aCommand  <<  "\n" <<std::endl;
+          std::cout << " toto \n\n\n" << std::endl;
         system(aCommand.c_str());
 
         // export au format raster
