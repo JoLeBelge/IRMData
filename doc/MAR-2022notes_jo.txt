@@ -306,10 +306,19 @@ cdo merge grilleIRMGDLZbio.nc grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDL
 
 select *, ROW_NUMBER() OVER(ORDER BY  ycoord desc, xcoord asc) as newID FROM grilleCompleteWGS84LONLATJoin_OK
 
-
 cdo --format nc -input,gridIRMGDL grilleIRMGDLPixIDOK.nc < grilleIRMGDLCompletePixID_OK.csv
 cdo setvar,ID -setcode,4 grilleIRMGDLPixIDOK.nc grilleIRMGDLPixIDOK.nc
 cdo merge grilleIRMGDLZbio.nc grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDLSH.nc grilleIRMGDLPixIDOK.nc grilleIRMGDLOK.nc
+
+# 2023 02 08 ; ajouter flandre et bruxelles à colonne zbio pour faire des statistiques sur toute la belgique (pour comparaison)
+
+cdo --format nc -input,gridIRMGDL grilleIRMGDLCompleteZbio_etFlandre.nc < grilleIRMGDLCompleteZbio_etFlandre.csv
+cdo setvar,ZBIO -setcode,5 grilleIRMGDLCompleteZbio_etFlandre.nc grilleIRMGDLCompleteZbio_etFlandre.nc
+cdo merge grilleIRMGDLCompleteZbio_etFlandre.nc grilleIRMGDLLON.nc grilleIRMGDLLAT.nc grilleIRMGDLSH.nc grilleIRMGDLPixIDOK.nc grilleIRMGDLOK.nc
+
+
+
+
 
 
 # variables des netcdf sur la grille de l'IRM - ne sont pas les mêmes que celles sur la grille rotationnée

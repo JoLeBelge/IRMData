@@ -397,7 +397,7 @@ void dataOnePix::divide(int nb, int nbMois){
     }
 }
 
-dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(NoD),Tmax(NoD),Tmin(NoD),R(NoD),ETP(NoD),P(NoD),WS(NoD),TminMin(100),RelHumid(0),LAT(0),LON(0){
+dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(NoD),Tmax(NoD),Tmin(NoD),R(NoD),ETP(NoD),P(NoD),WS(NoD),TminMin(100),RelHumid(0){
     if(colTmean!=0){try{Tmean=std::stod(aLigne.at(colTmean));}catch (...) {}}
     if(colTmax!=0){try{Tmax=std::stod(aLigne.at(colTmax));}catch (...) {}}
     if(colTmin!=0){try{Tmin=std::stod(aLigne.at(colTmin));TminMin=Tmin;}catch (...) {}}
@@ -409,6 +409,7 @@ dataOnePix::dataOnePix(std::vector<std::string> & aLigne):Tmean(NoD),Tmax(NoD),T
     if(colETP!=0){try{ETP=std::stod(aLigne.at(colETP));}catch (...) {}}
     if(colWS!=0){try{WS=std::stod(aLigne.at(colWS));}catch (...) {}}
     if(colRH!=0){try{RelHumid=std::stod(aLigne.at(colRH));}catch (...) {}}
+
 }
 
 void dataOnePix::addOneDate(dataOnePix * dop){
@@ -450,11 +451,7 @@ void irmData::saveNetCDF(std::string aOut){
     // ouvrir la grille IRM qui me sert de template (j'ai l'id du pixel dedans) -- Attention, il y a un effet de bord et plusieurs pixels ont le même id! à corriger assez vite
     std::string grillepath("/home/jo/app/climat/doc/grilleIRMGDL.nc");
     NcFile grille(grillepath.c_str(),NcFile::FileMode::ReadOnly,NULL,0,NcFile::FileFormat::Netcdf4);
-    NcVar *idVar=grille.get_var("ID");
     float var_in[NY][NX];
-    if (!idVar->get(&var_in[0][0], 1, NY, NX)){
-        std::cout << "getvarin bad\n" << std::endl;
-    }
 
     // CREATION NOUVEAU NETCDF  ---------------------------------
     int NTIME(mVAllDates.size());
@@ -473,7 +470,6 @@ void irmData::saveNetCDF(std::string aOut){
     //grille de l'IRM
     NcDim * dimX = ncOut.add_dim("X",NX);
     NcDim * dimY = ncOut.add_dim("Y",NY);
-
     // variable TIME (pas dimension mais variable associée)
     NcVar* varTime  = ncOut.add_var("TIME",ncFloat,dimTime);
     // gdal_translate ne parviens pas à comprendre que ma variable time contient les date de la dimension time. mais cdo comprend bien, c'est ce qui compte
@@ -482,6 +478,31 @@ void irmData::saveNetCDF(std::string aOut){
     varTime->add_att("time_origin","01-JAN-1950 00:00:00");
     varTime->add_att("bounds","TIME_bnds"); // https://daac.ornl.gov/submit/netcdfrequirements/
     ncOut.add_var("TIME_bnds",ncFloat,dimTime);
+
+    // celles là je les colles tels quels, en espérant que ce soit bon.
+    idVar=grille.get_var("LON");
+    if (!idVar->get(&var_in[0][0], 1, NY, NX)){
+        std::cout << "getvarin bad\n" << std::endl;
+    }
+    NcVar* varLON  = ncOut.add_var("LON",ncDouble,dimY,dimX);
+    varLON->put(&var_in[0][0],NY,NX);
+
+    idVar=grille.get_var("LAT");
+    if (!idVar->get(&var_in[0][0], 1, NY, NX)){
+        std::cout << "getvarin bad\n" << std::endl;
+    }
+    NcVar* varLAT  = ncOut.add_var("LAT",ncDouble,dimY,dimX);
+    varLAT->put(&var_in[0][0],NY,NX);
+
+    NcVar *idVar=grille.get_var("ID");
+
+    if (!idVar->get(&var_in[0][0], 1, NY, NX)){
+        std::cout << "getvarin bad\n" << std::endl;
+    }
+    NcVar* varPixID  = ncOut.add_var("PIXEL_ID",ncInt,dimY,dimX);
+    varPixID->put(&var_in[0][0],NY,NX);
+    varPixID->add_att("name","identifiant du pixel de 5kmx5km de la grille de l'IRM");
+    myvar->add_att("_FillValue",0);
 
     float timebuf[NTIME];
     int t(0);
@@ -529,11 +550,16 @@ void irmData::saveNetCDF(std::string aOut){
         //myvar->put(&varbuf[0][0][0],NTIME, NY,NX);
     }
 
+
+
     ncOut.close();
 
     // le Y est à l'envers quand j'ouvre le netcdf dans Qgis; c'est du au fait que la grille n'est pas définie comme dans grilleIRMGDL.nc ou on donne l'extend et la résolution en Y qui est négative.
+    // Ajout aussi des variales lat lon
     std::string aGrid("/home/jo/app/climat/doc/gridIRMGDL.txt");
-    std::string aCommand="cdo setgrid,"+aGrid+" " + aOutTmp + " " + aOut;
+    std::string aCommand="cdo -setgrid,"+aGrid+" " + aOutTmp + " " + aOut;
+
+
     std::cout << aCommand << std::endl;
     system(aCommand.c_str());
 }

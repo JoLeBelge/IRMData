@@ -219,13 +219,13 @@ int main(int argc, char *argv[])
                 //mar.hourly2daily();
                 //mar.daily2monthly();
                 if(1){
-                   // mar.multiY(2012,2020);
-                   // mar.multiYStat(2012,2020);
+                    //mar.multiY(1961,1990);
+                    mar.multiYStat(1961,1990);
 
-                    //mar.multiY(1991,1991);
-                    //mar.multiYStat(1991,1991);
+                    //mar.multiY(1991,2020);
+                    mar.multiYStat(1991,2020);
                 }
-                if(1){
+                if(0){
 
                     // comme VanderPerre et al., sauf que eux ont utilisé une grille de 500mètres.
                     /*mar.multiY(1986,2005);
@@ -236,9 +236,9 @@ int main(int argc, char *argv[])
                      */
 
                     //mar.multiY(1981,2010);
-                    mar.multiYStat(1981,2010);
+                    //mar.multiYStat(1981,2010);
                     //mar.multiY(1991,2020);
-                    mar.multiYStat(1991,2020);
+                    //mar.multiYStat(1991,2020);
 
                 }
 
