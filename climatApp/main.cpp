@@ -187,8 +187,8 @@ int main(int argc, char *argv[])
             // from daily
             MAR mar(input,input2,grid,0);
             mar.hourly2daily();
-            mar.daily2monthly();
-            if(0){
+            //mar.daily2monthly();
+            if(1){
 
                 //mar.multiY(1981,2010);
                 //mar.multiYStat(1981,2010);
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 
             }
 
-            if(1){
+            if(0){
                 mar.multiY(2021,2050);
                 mar.multiYStat(2021,2050);
                 mar.multiY(2051,2080);

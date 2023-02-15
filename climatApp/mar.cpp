@@ -109,8 +109,7 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
         vVarsSum={"RF","RO3","ET","SL","SF"}; // SF : snow fall
         vVarsGXN={"T2m","ST"};
         vVarsG={"SQC","ZN"}; // ZN = total snow pack
-        //Tvar="T2m";
-        Tvar="ST";
+        Tvar="T2m"; // en fait ST c'est pas bon du tout!
         Pvar="RF";
 
         //rechunk();// renomme aussi les fichiers de base, donc je dois le faire,- mais pas pour MAR 13
@@ -369,6 +368,17 @@ void MAR::multiYStat(int y1,int y2){
         std::cout << aCommand <<  "\n" <<std::endl;
         system(aCommand.c_str());
 
+        // snowFall
+
+        switch (mTypeGrid){
+        case irm:{aCommand="cdo -s -yearmean -selvar,SF "+ nameMultiY(y1,y2,"monthly")+" "+ nameMultiY(y1,y2,"SF");
+            std::cout << aCommand <<  "\n" <<std::endl;
+            system(aCommand.c_str());
+            break;
+        }
+        }
+
+
         // somme sur l'année
         aCommand="cdo -s -yearsum -selvar,"+Pvar+" " + nameMultiY(y1,y2,"G") + " " + nameMultiY(y1,y2,"MBRRS");
         std::cout << aCommand << "\n" << std::endl;
@@ -565,7 +575,7 @@ void MAR::multiYStat(int y1,int y2){
         std::string aTable(mOutMY+"/table"+std::to_string(y1)+"-"+std::to_string(y2)+"ZBIO.csv");
 
         std::ofstream ofs (aTable, std::ofstream::out);
-        ofs << "ZBIO;MBRR;TTG;TTX;TTN;m4_9MBRR;m4_9TTG;BHE;BHE2;GSL(6,8);SD30;SD40;SDG20;SDG25;FD;FDG;HPD\n";
+        ofs << "ZBIO;MBRR;TTG;TTX;TTN;m4_9MBRR;m4_9TTG;BHE;BHE2;GSL(6,8);SD30;SD40;SDG20;SDG25;FD;FDG;HPD;SF\n";
         // system(aCommand.c_str());
         std::vector<std::string> vZbio={"Belgique","Nord-Sillon SM","Ardenne","HA et HCO", "HA", "HCO", "BMA","Oesling", "Gutland",
         "Basse Lorraine",
@@ -620,7 +630,16 @@ void MAR::multiYStat(int y1,int y2){
             aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"FDG") ;
             ofs <<exec(aCommand.c_str()) << ";";
             aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"HPD") ;
-            ofs <<exec(aCommand.c_str()) << "\n";
+            ofs <<exec(aCommand.c_str()) << ";";
+            switch (mTypeGrid){
+            case irm:{  aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SF") ;
+                std::cout << aCommand <<std::endl;
+                system(aCommand.c_str());
+                ofs <<exec(aCommand.c_str());
+                break;
+            }
+            }
+            ofs << "\n";
             j++;
         }
     }
