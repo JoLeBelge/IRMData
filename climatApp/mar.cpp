@@ -106,10 +106,11 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
 
     switch(mTypeGrid){
     case irm:{
-        vVarsSum={"RF","RO3","ET","SL","SF"};
+        vVarsSum={"RF","RO3","ET","SL","SF"}; // SF : snow fall
         vVarsGXN={"T2m","ST"};
-        vVarsG={"SQC"};
-        Tvar="T2m";
+        vVarsG={"SQC","ZN"}; // ZN = total snow pack
+        //Tvar="T2m";
+        Tvar="ST";
         Pvar="RF";
 
         //rechunk();// renomme aussi les fichiers de base, donc je dois le faire,- mais pas pour MAR 13

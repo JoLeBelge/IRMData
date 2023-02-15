@@ -480,7 +480,7 @@ void irmData::saveNetCDF(std::string aOut){
     ncOut.add_var("TIME_bnds",ncFloat,dimTime);
 
     // celles là je les colles tels quels, en espérant que ce soit bon.
-    idVar=grille.get_var("LON");
+    NcVar *idVar=grille.get_var("LON");
     if (!idVar->get(&var_in[0][0], 1, NY, NX)){
         std::cout << "getvarin bad\n" << std::endl;
     }
@@ -494,7 +494,7 @@ void irmData::saveNetCDF(std::string aOut){
     NcVar* varLAT  = ncOut.add_var("LAT",ncDouble,dimY,dimX);
     varLAT->put(&var_in[0][0],NY,NX);
 
-    NcVar *idVar=grille.get_var("ID");
+    idVar=grille.get_var("ID");
 
     if (!idVar->get(&var_in[0][0], 1, NY, NX)){
         std::cout << "getvarin bad\n" << std::endl;
@@ -502,7 +502,7 @@ void irmData::saveNetCDF(std::string aOut){
     NcVar* varPixID  = ncOut.add_var("PIXEL_ID",ncInt,dimY,dimX);
     varPixID->put(&var_in[0][0],NY,NX);
     varPixID->add_att("name","identifiant du pixel de 5kmx5km de la grille de l'IRM");
-    myvar->add_att("_FillValue",0);
+    varPixID->add_att("_FillValue",0);
 
     float timebuf[NTIME];
     int t(0);
