@@ -83,7 +83,7 @@ public:
     void divide(int nb, int nbMois=1);
     void cat(){std::cout << "Tmean " << Tmean << " Tmax " << Tmax << " Tmin " << Tmin << " P " << P << std::endl;}
 //private:
-    double Tmean,Tmax,Tmin,R,ETP, P, WS, TminMin, RelHumid, LAT,LON;
+    double Tmean,Tmax,Tmin,R,ETP, P, WS, TminMin, RelHumid;
 };
 
 #endif // IRMDATA_H

@@ -563,7 +563,7 @@ void MAR::multiYStat(int y1,int y2){
         std::ofstream ofs (aTable, std::ofstream::out);
         ofs << "ZBIO;MBRR;TTG;TTX;TTN;m4_9MBRR;m4_9TTG;BHE;BHE2;GSL(6,8);SD30;SD40;SDG20;SDG25;FD;FDG;HPD\n";
         // system(aCommand.c_str());
-        std::vector<std::string> vZbio={"RW","Ardenne","HA et HCO", "HA", "HCO", "BMA","Oesling", "Gutland",
+        std::vector<std::string> vZbio={"Belgique","Nord-Sillon SM","Ardenne","HA et HCO", "HA", "HCO", "BMA","Oesling", "Gutland",
         "Basse Lorraine",
         "Fagne - Famenne - Calestienne",
         "Haute Lorraine",
@@ -572,7 +572,7 @@ void MAR::multiYStat(int y1,int y2){
         "Condroz - Sambre et Meuse",
         "Thiérache"};
         int j(0);
-        for (std::string zbio : {"mask=ZBIO!=0;","mask=(ZBIO==10)+(ZBIO==1)+(ZBIO==2);","mask=(ZBIO==10)?1:(ZBIO==1);","mask=ZBIO==10;","mask=ZBIO==1;","mask=ZBIO==2;","mask=(ZBIO==11)+(ZBIO==12)+(ZBIO==13);","mask=(ZBIO==14)+(ZBIO==15)+(ZBIO==16)+(ZBIO==17);","mask=ZBIO==3;","mask=ZBIO==4;","mask=ZBIO==5;","mask=ZBIO==6;","mask=ZBIO==7;","mask=ZBIO==8;","mask=ZBIO==9;"}){
+        for (std::string zbio : {"mask=ZBIO!=0;","mask=(ZBIO==6)+(ZBIO==7);","mask=(ZBIO==10)+(ZBIO==1)+(ZBIO==2);","mask=(ZBIO==10)?1:(ZBIO==1);","mask=ZBIO==10;","mask=ZBIO==1;","mask=ZBIO==2;","mask=(ZBIO==11)+(ZBIO==12)+(ZBIO==13);","mask=(ZBIO==14)+(ZBIO==15)+(ZBIO==16)+(ZBIO==17);","mask=ZBIO==3;","mask=ZBIO==4;","mask=ZBIO==5;","mask=ZBIO==6;","mask=ZBIO==7;","mask=ZBIO==8;","mask=ZBIO==9;"}){
 
             // ofs <<std::to_string(zbio) << ";";
             //ofs <<"'"<<zbio << "';";
