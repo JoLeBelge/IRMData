@@ -39,6 +39,8 @@ public:
     bool mFromDaily;
     //,mOutChunk
 
+    void moyenneMobile();
+
     typeGrid mTypeGrid;
 
     //MY = multi-year

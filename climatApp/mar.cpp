@@ -339,6 +339,38 @@ void MAR::multiY(int y1,int y2){
     system(aCommand.c_str());
 }
 
+
+// calcul des moyennes de températures décénales, pour chacune des zbio
+void MAR::moyenneMobile(){
+
+    std::string aTable(mOutMY+"/tableMoyMobileZBIO.csv");
+    std::string aCommand;
+
+    std::ofstream ofs (aTable, std::ofstream::out);
+    ofs << "Decennie;ZBIO;TTG\n";
+    // system(aCommand.c_str());
+    std::vector<std::string> vZbio={"NordSM","Ardenne","HA", "HCO", "BMA"};
+
+    for (int d : {2,3,4,5,6,7,8,9}){
+       int y1(2000+d*10+1),y2(2000+(d+1)*10);
+       multiY(y1,y2);
+       // moyenne sur l'année
+       aCommand="cdo -s -yearmean -selvar,"+Tvar+"G -ymonmean -selname,"+Pvar+","+Tvar+"G "+ nameMultiY(y1,y2,"monthly") + " " + nameMultiY(y1,y2,"TTG");
+       std::cout << aCommand << "\n" << std::endl;
+       system(aCommand.c_str());
+       // sortie pour chaque zbio
+       int j(0);
+       for (std::string zbio : {"mask=(ZBIO==6)+(ZBIO==7);","mask=(ZBIO==10)+(ZBIO==1)+(ZBIO==2);","mask=ZBIO==10;","mask=ZBIO==1;","mask=ZBIO==2;"}){
+           ofs <<y1<<";"<< vZbio.at(j) << ";";
+           aCommand="cdo  -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TTG") ;
+           ofs <<exec(aCommand.c_str()) << "\n";
+           j++;
+       }
+
+    }
+
+}
+
 void MAR::multiYStat(int y1,int y2){
     std::string aCommand;
     bool compute(1);
@@ -518,6 +550,18 @@ void MAR::multiYStat(int y1,int y2){
         for (auto kv : mYearNcdf){
             if (kv.first>y1-1 && kv.first < y2+1){
                 std::string aIn=dailyFile(kv.first);
+                aCommand += " -setvar,SD -eca_su,35 -expr,'TX="+Tvar+"X+274.15;' " + dailyFile(kv.first);
+            }
+        }
+        aCommand += " " + nameMultiY(y1,y2,"SD35");
+        std::cout << aCommand << std::endl;
+        system(aCommand.c_str());
+
+
+        aCommand="cdo -s copy ";
+        for (auto kv : mYearNcdf){
+            if (kv.first>y1-1 && kv.first < y2+1){
+                std::string aIn=dailyFile(kv.first);
                 aCommand += " -setvar,SD -eca_su,40 -expr,'TX="+Tvar+"X+274.15;' " + dailyFile(kv.first);
             }
         }
@@ -575,7 +619,7 @@ void MAR::multiYStat(int y1,int y2){
         std::string aTable(mOutMY+"/table"+std::to_string(y1)+"-"+std::to_string(y2)+"ZBIO.csv");
 
         std::ofstream ofs (aTable, std::ofstream::out);
-        ofs << "ZBIO;MBRR;TTG;TTX;TTN;m4_9MBRR;m4_9TTG;BHE;BHE2;GSL(6,8);SD30;SD40;SDG20;SDG25;FD;FDG;HPD;SF\n";
+        ofs << "ZBIO;MBRR;TTG;TTX;TTN;m4_9MBRR;m4_9TTG;BHE;BHE2;GSL(6,8);SD30;SD35;SD40;SDG20;SDG25;FD;FDG;HPD;SF\n";
         // system(aCommand.c_str());
         std::vector<std::string> vZbio={"Belgique","Nord-Sillon SM","Ardenne","HA et HCO", "HA", "HCO", "BMA","Oesling", "Gutland",
         "Basse Lorraine",
@@ -618,6 +662,8 @@ void MAR::multiYStat(int y1,int y2){
 
             //std::cout << " réponse gsl ;" <<exec(aCommand.c_str()) << ";";
             aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SD30") ;
+            ofs <<exec(aCommand.c_str()) << ";";
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SD35") ;
             ofs <<exec(aCommand.c_str()) << ";";
             aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SD40") ;
             ofs <<exec(aCommand.c_str()) << ";";

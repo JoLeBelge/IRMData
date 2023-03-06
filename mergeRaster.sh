@@ -18,5 +18,14 @@ otbcli_BandMathX -il /media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR-13-MPI-
 gdalwarp -overwrite -tr 100 100 -t_srs EPSG:31370 -r cubicspline /media/gef/DataLisein/r/ssp585-${y}MBRRS.tif /media/gef/DataLisein/r/ssp585-${y}MBRRS_GSD100.tif
 
 gdalwarp -overwrite -of GTiff -cutline /media/gef/DataLisein/limiteWal.shp -cl limiteWal -crop_to_cutline /media/gef/DataLisein/r/ssp585-${y}MBRRS_GSD100.tif /media/gef/DataLisein/r/ssp585-${y}MBRRS_GSD100Clip.tif
+
+
+
 done
+
+otbcli_BandMathX -il /media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR-13-NorESM2-MM-ssp585/MAR-MultiY/raster/MARv3.13-NorESM2-MM-ssp585-1991-2020BHE.tif /media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR-13-MIROC6-ssp585/MAR-MultiY/raster/MARv3.13-MIROC6-ssp585-1991-2020BHE.tif -out /media/gef/DataLisein/r/ssp585-1991-2020BHE.tif -exp '(im1b1+im2b1)/2' -ram 4000
+
+gdalwarp -overwrite -tr 100 100 -r cubicspline /media/gef/DataLisein/r/ssp585-1991-2020BHE.tif /media/gef/DataLisein/r/ssp585-1991-2020BHE_GSD100.tif
+
+gdalwarp -overwrite -of GTiff -cutline /media/gef/DataLisein/limiteWal.shp -cl limiteWal -crop_to_cutline /media/gef/DataLisein/r/ssp585-1991-2020BHE_GSD100.tif /media/gef/DataLisein/r/ssp585-1991-2020BHE_GSD100Clip.tif
 
