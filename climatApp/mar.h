@@ -29,6 +29,9 @@ public:
     void daily2monthly(bool overwrite=0);
     void multiY(int y1,int y2);
     void multiYStat(int y1,int y2);
+    void multiYStatTable(int y1,int y2,std::string post="");
+
+    void multiYAno(int y1, int y2, MAR * era5);
      std::string nameMultiY(int y1,int y2, std::string post="");
      std::string nameRastMultiY(int y1,int y2, std::string post);
     std::string dailyFile(int y);

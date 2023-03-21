@@ -35,6 +35,8 @@ void processIRMData();
 void processSAFRAN();
 void processECADData();
 
+void correctionPrevMar(int y1,int y2);
+
 // pour avoir ensemble une date, un identifiant de site et une position de site
 /*class dateSite;
 
@@ -183,62 +185,60 @@ int main(int argc, char *argv[])
 
             // ./climatApp --outil 7 --input "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/" --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --mode 2
             std::cout << " MAR netcdf : passage de l'horaire au journalier" << std::endl;
-            //MAR mar(input,input2,grid,0);
-            // from daily
             MAR mar(input,input2,grid,0);
             //mar.hourly2daily();
             //mar.daily2monthly();
-
             //mar.moyenneMobile();
 
-            if(1){
-
-                //mar.multiY(1981,2010);
-                //mar.multiYStat(1981,2010);
-                mar.multiY(1991,2020);
-                mar.multiYStat(1991,2020);
-
-            }
-
-            if(0){
-                mar.multiY(2021,2050);
-                mar.multiYStat(2021,2050);
-                mar.multiY(2051,2080);
-                mar.multiYStat(2051,2080);
-                mar.multiY(2081,2100);
-                mar.multiYStat(2081,2100);
-            }
+            mar.multiY(1991,2020);
+            mar.multiYStat(1991,2020);
+            mar.multiY(2021,2050);
+            mar.multiYStat(2021,2050);
+            mar.multiY(2051,2080);
+            mar.multiYStat(2051,2080);
+            mar.multiY(2081,2100);
+            mar.multiYStat(2081,2100);
 
             break;
         }
+
+            // double correction pour les valeurs simulées pour le futur ; je crée un total de 3 objets MAR pour pouvoir effectuer cette correction
+        case 8:{
+            int y1(2021), y2(2050);   // période de simulation
+            correctionPrevMar(y1,y2);
+            // ./climatApp --outil 7 --input "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/" --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --mode 2
+
+            break;
+        }
+
         case 40:{
             // travail sur un fichier netcdf de l'IRM, créé par l'outil 4 - il faut structurer tout ça comme les sorties MAR ; je dois donc faire des fichiers individuel pour chaque année.
-                MAR mar(input,input2,irmO,0);
-                //mar.hourly2daily();
-                //mar.daily2monthly();
-                if(1){
-                    //mar.multiY(1961,1990);
-                    mar.multiYStat(1961,1990);
+            MAR mar(input,input2,irmO,0);
+            mar.hourly2daily();
+            mar.daily2monthly();
+            if(1){
+                mar.multiY(1961,1990);
+                mar.multiYStat(1961,1990);
 
-                    //mar.multiY(1991,2020);
-                    mar.multiYStat(1991,2020);
-                }
-                if(0){
+                mar.multiY(1991,2020);
+                mar.multiYStat(1991,2020);
+            }
+            if(0){
 
-                    // comme VanderPerre et al., sauf que eux ont utilisé une grille de 500mètres.
-                    /*mar.multiY(1986,2005);
+                // comme VanderPerre et al., sauf que eux ont utilisé une grille de 500mètres.
+                /*mar.multiY(1986,2005);
                     mar.multiYStat(1986,2005);
 
                     mar.multiY(2011,2020);
                     mar.multiYStat(2011,2020);
                      */
 
-                    //mar.multiY(1981,2010);
-                    //mar.multiYStat(1981,2010);
-                    //mar.multiY(1991,2020);
-                    //mar.multiYStat(1991,2020);
+                //mar.multiY(1981,2010);
+                //mar.multiYStat(1981,2010);
+                //mar.multiY(1991,2020);
+                //mar.multiYStat(1991,2020);
 
-                }
+            }
 
             break;
         }
@@ -494,5 +494,50 @@ void processSAFRAN(){
         }
     }
 
+
+}
+
+void correctionPrevMar(int y1, int y2){
+    std::cout << " correction pour valeurs absolues simulation climat futur" << std::endl;
+
+    MAR era5("/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/",input2,typeGrid::irm,0);
+    MAR prevFutur(input,input2,typeGrid::irm,0);
+    MAR irm("/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/IRM/",input2,typeGrid::irmO,0);
+
+    MAR prevFutur(input,input2,typeGrid::irm,0);
+
+    multiYAno
+
+    if(0){
+    std::string aCommand;
+
+    int y1r(1991), y2r(2020); // période de référence
+
+    // calcul du biais entre observations irm et reanalyse MAR
+    //aCommand="cdo -sub " + irm.nameMultiY(y1r,y2r,"TG") + " " + era5.nameMultiY(y1r,y2r,"TG") + " " + era5.nameMultiY(y1r,y2r,"TGbiais");
+
+    /*---------- TG ----------*/
+    // calcul de l'anomalie climatique en %
+    aCommand="cdo -expr,'TGanomalie=100*TGdelta/T2mG;' -merge "+ era5.nameMultiY(y1r,y2r,"TG") + " -setvar,TGdelta -sub " + prevFutur.nameMultiY(y1,y2,"TG") + " " + era5.nameMultiY(y1r,y2r,"TG") + " " + prevFutur.nameMultiY(y1,y2,"TGcor1");
+    std::cout << aCommand << std::endl;
+    system(aCommand.c_str());
+    // appliquer l'anomalie climatique au climat irm
+    aCommand="cdo -expr,'T2mG=TG+(TG*TGanomalie)/100.0;' -merge " + irm.nameMultiY(y1r,y2r,"TG") + " " + prevFutur.nameMultiY(y1,y2,"TGcor1") + " " + prevFutur.nameMultiY(y1,y2,"TGcor");
+    std::cout << aCommand << std::endl;
+    system(aCommand.c_str());
+
+    /*---------- TX ----------*/
+    // calcul de l'anomalie climatique en %
+    aCommand="cdo -expr,'TXanomalie=100*TXdelta/T2mX;' -merge "+ era5.nameMultiY(y1r,y2r,"TX") + " -setvar,TXdelta -sub " + prevFutur.nameMultiY(y1,y2,"TX") + " " + era5.nameMultiY(y1r,y2r,"TX") + " " + prevFutur.nameMultiY(y1,y2,"TXcor1");
+    std::cout << aCommand << std::endl;
+    system(aCommand.c_str());
+    // appliquer l'anomalie climatique au climat irm
+    aCommand="cdo -expr,'T2mX=TX+(TX*TXanomalie)/100.0;' -merge " + irm.nameMultiY(y1r,y2r,"TX") + " " + prevFutur.nameMultiY(y1,y2,"TXcor1") + " " + prevFutur.nameMultiY(y1,y2,"TXcor");
+    std::cout << aCommand << std::endl;
+    system(aCommand.c_str());
+
+    // creation du tableau de synthèse sur base de ces indices corrigées
+     prevFutur.multiYStatTable(y1,y2,"cor");
+    }
 
 }
