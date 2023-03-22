@@ -5,7 +5,8 @@ library(tidyverse)
 
 path <- "/home/jo/Documents/climat_MAR/all"
 
-path <- "/home/jo/Documents/climat_MAR/all-20230206"
+path <- "/home/jo/Documents/climat_MAR/all-20230215"
+path <- "/home/jo/Documents/climat_MAR/all-20230306"
 
 setwd(path)
 dirs <- list.dirs(path = path, recursive = FALSE)
@@ -79,7 +80,7 @@ for (dir in dirs) {
   
   for (f in list.files(dir)){
     
-    model <- substr(dirName,1,nchar(dirName)-6)
+    model <- substr(dirName,1,nchar(dirName)-7)
     ssp <- substr(dirName,nchar(dirName)-5,nchar(dirName))
     
     timeName <- substr(f,6,14)
@@ -107,7 +108,38 @@ for (dir in dirs) {
 
 write.table(df,"syntheseMAR3.13-ArdenneAllModels.csv",row.names = F)
 #moyenne maintenant
-summary <- df %>% group_by(ssp,periode) %>% summarise(nombreModels=n(),MBRR=mean(MBRR),TTG=mean(TTG),TTX=max(TTX),TTN=min(TTN),m4_9MBRR=mean(m4_9MBRR),BHE=mean(BHE),BHE2=mean(BHE2),GSL=mean(GSL.6.8.),SD30=mean(SD30),SD40=mean(SD40),SDG20=mean(SDG20), SDG25=mean(SDG25),FD=mean(FD),FDG=mean(FDG), HPD=mean(HPD))
+summary <- df %>% group_by(ssp,periode) %>% summarise(nombreModels=n(),MBRR=mean(MBRR),TTG=mean(TTG),TTX=max(TTX),TTN=min(TTN),m4_9MBRR=mean(m4_9MBRR),m4_9TTG=mean(m4_9TTG),BHE=mean(BHE),BHE2=mean(BHE2),GSL=mean(GSL.6.8.),SD30=mean(SD30),SD35=mean(SD35),SD40=mean(SD40),SDG20=mean(SDG20), SDG25=mean(SDG25),FD=mean(FD),FDG=mean(FDG), HPD=mean(HPD),SF=mean(SF))
 
 write.table(summary,"syntheseMAR3.13-Ardenne.csv",row.names = F)
 
+#######################################################################################################
+
+# synthèse des moyenne mobile de température annuelle par zbio
+path <- "/home/jo/Documents/carteApt/Andyne_catalogues/climat/moyMob"
+setwd(path)
+test <- 1
+for (f in list.files(getwd())){
+  
+    model <- substr(f,20,nchar(f)-4-7)
+    ssp <-  substr(f,nchar(f)-4-5,nchar(f)-4)
+    d <- read.table(f,sep=";", header=T) 
+    d$model <- model
+    d$ssp <- ssp
+    if(test){dall <- d
+    test <- 0}else{dall <- rbind(dall,d)}
+}
+summary <- dall[!dall$ZBIO %in% c("Ardenne","NordSM"),] %>% group_by(ssp,Decennie,ZBIO) %>% summarise(TTG=mean(TTG))
+
+#write.table(summary,"evolTTG.csv",row.names = F)
+
+d585 <- summary[summary$ssp=="ssp585",]
+
+d585 %>%
+  ggplot( aes(x=Decennie+5, y=TTG, group=ZBIO, color=ZBIO)) +
+  geom_line() +   scale_fill_manual(values=c("#E69F00", "#56B4E9","#999999"))
+
+
+
+plot(d585$Decennie[d585$ZBIO=="HA"]+5,d585$TTG[d585$ZBIO=="HA"],ylim=c(8,13),xlim=c(2020,2100),xlab="Années",ylab="Température moyenne annuelle [C°]", type="l",lwd=2,col="#5c8944")
+lines(d585$Decennie[d585$ZBIO=="BMA"]+5,d585$TTG[d585$ZBIO=="BMA"], type = "l", lwd = 2,col="#cdf57a")
+lines(d585$Decennie[d585$ZBIO=="HCO"]+5,d585$TTG[d585$ZBIO=="HCO"], type = "l", lwd = 2,col="#89cd66")

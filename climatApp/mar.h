@@ -31,7 +31,8 @@ public:
     void multiYStat(int y1,int y2);
     void multiYStatTable(int y1,int y2,std::string post="");
 
-    void multiYAno(int y1, int y2, MAR * era5);
+    void multiYCorrection(int y1, int y2, MAR * era5, MAR * GCMhisto);
+    void varInterannuelle(int y1, int y2,std::string aVar);
      std::string nameMultiY(int y1,int y2, std::string post="");
      std::string nameRastMultiY(int y1,int y2, std::string post);
     std::string dailyFile(int y);

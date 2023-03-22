@@ -7,7 +7,9 @@
 #include "../date/include/date/date.h"
 #include "mar.h"
 
+
 using namespace date;
+using namespace std;
 namespace po = boost::program_options;
 std::string mBDpath("/home/lisein/Documents/Scolyte/Data/owsf/owsf_scolyte.db");
 
@@ -20,6 +22,7 @@ std::string input2("/home/lisein/Documents/Scolyte/Data/climat/IRM/pixel_id.tif"
 // dossier ou l'on va sauver tout nos résultats
 std::string pathOut("/home/lisein/Documents/Scolyte/Data/climat/IRM/irmCarte/");
 
+std::string input3("");
 
 extern std::vector<int> vYears;
 extern std::vector<int> vMonths;
@@ -68,8 +71,11 @@ int main(int argc, char *argv[])
             ("accro", po::value< std::string>(), "accro pour carte climatique ; qq, tg, ...")
             ("input", po::value< std::string>(), "chemin d'accès et nom du fichier csv contenant les données de l'IRM")
             ("input2", po::value< std::string>(), "chemin d'accès et nom du fichier raster contenant les identifiant de chaque pixel= Raster Template")
+            ("input3", po::value< std::string>(), "chemin d'accès reanalyse GCM-MAR pour corriger indice climatique")
             ("outDir", po::value< std::string>(), "dossier ou sera écrit les résultats")
             ("mode", po::value<int>(), "mode pour export netcdf to raster : 1 grille rotationnée SOP 5km de résolution, 2 grille IRM; 3 grille rotationnée résolution 7.5km")
+            ("years",  po::value<std::vector<int> >()->multitoken(), "année 1 et année 2 pour calcul d'indices climatiques sur une période de plusieurs années" )
+
             ;
 
     po::variables_map vm;
@@ -88,6 +94,12 @@ int main(int argc, char *argv[])
         if (mode==2){grid=irm;}
         if (mode==3){grid=SOP75;}
         if (mode==4){grid=irmO;}
+    }
+
+    std::vector<int> y;
+    if (!vm["years"].empty() && (vm["years"].as<vector<int> >()).size() == 2) {
+        y=vm["years"].as<vector<int> >();
+        std::cout << " période de référence entre " << y.at(0) << " et " << y.at(1) <<std::endl;
     }
 
     if (vm.count("input")) {input=vm["input"].as<std::string>();
@@ -202,9 +214,11 @@ int main(int argc, char *argv[])
             break;
         }
 
-            // double correction pour les valeurs simulées pour le futur ; je crée un total de 3 objets MAR pour pouvoir effectuer cette correction
+            // correction pour les valeurs simulées pour le futur ; je crée un total de 3 objets MAR pour pouvoir cal
         case 8:{
-            int y1(2021), y2(2050);   // période de simulation
+
+            if (vm.count("input3")) {input3=vm["input3"].as<std::string>();}
+            int y1(y.at(0)), y2(y.at(1));   // période de simulation
             correctionPrevMar(y1,y2);
             // ./climatApp --outil 7 --input "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/" --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --mode 2
 
@@ -493,30 +507,20 @@ void processSAFRAN(){
             mens.exportMap("safranETP_"+std::to_string(m),"ETP");
         }
     }
-
-
 }
 
 void correctionPrevMar(int y1, int y2){
     std::cout << " correction pour valeurs absolues simulation climat futur" << std::endl;
 
     MAR era5("/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/",input2,typeGrid::irm,0);
-    MAR prevFutur(input,input2,typeGrid::irm,0);
-    MAR irm("/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/IRM/",input2,typeGrid::irmO,0);
+    MAR GCMsimu(input,input2,typeGrid::irm,0); // prévision future pour ce GCM
+    //MAR irm("/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/IRM/",input2,typeGrid::irmO,0);
+    MAR GCMhisto(input3,input2,typeGrid::irm,0); // réanalyse pour ce GCM
 
-    MAR prevFutur(input,input2,typeGrid::irm,0);
+    GCMsimu.multiYCorrection(y1,y2,& era5, & GCMhisto);
 
-    multiYAno
-
-    if(0){
-    std::string aCommand;
-
-    int y1r(1991), y2r(2020); // période de référence
-
-    // calcul du biais entre observations irm et reanalyse MAR
+    /* calcul du biais entre observations irm et reanalyse MAR -- OLD OLD test numéro 1 qui n'est pas la bonne démarche hélas
     //aCommand="cdo -sub " + irm.nameMultiY(y1r,y2r,"TG") + " " + era5.nameMultiY(y1r,y2r,"TG") + " " + era5.nameMultiY(y1r,y2r,"TGbiais");
-
-    /*---------- TG ----------*/
     // calcul de l'anomalie climatique en %
     aCommand="cdo -expr,'TGanomalie=100*TGdelta/T2mG;' -merge "+ era5.nameMultiY(y1r,y2r,"TG") + " -setvar,TGdelta -sub " + prevFutur.nameMultiY(y1,y2,"TG") + " " + era5.nameMultiY(y1r,y2r,"TG") + " " + prevFutur.nameMultiY(y1,y2,"TGcor1");
     std::cout << aCommand << std::endl;
@@ -524,20 +528,5 @@ void correctionPrevMar(int y1, int y2){
     // appliquer l'anomalie climatique au climat irm
     aCommand="cdo -expr,'T2mG=TG+(TG*TGanomalie)/100.0;' -merge " + irm.nameMultiY(y1r,y2r,"TG") + " " + prevFutur.nameMultiY(y1,y2,"TGcor1") + " " + prevFutur.nameMultiY(y1,y2,"TGcor");
     std::cout << aCommand << std::endl;
-    system(aCommand.c_str());
-
-    /*---------- TX ----------*/
-    // calcul de l'anomalie climatique en %
-    aCommand="cdo -expr,'TXanomalie=100*TXdelta/T2mX;' -merge "+ era5.nameMultiY(y1r,y2r,"TX") + " -setvar,TXdelta -sub " + prevFutur.nameMultiY(y1,y2,"TX") + " " + era5.nameMultiY(y1r,y2r,"TX") + " " + prevFutur.nameMultiY(y1,y2,"TXcor1");
-    std::cout << aCommand << std::endl;
-    system(aCommand.c_str());
-    // appliquer l'anomalie climatique au climat irm
-    aCommand="cdo -expr,'T2mX=TX+(TX*TXanomalie)/100.0;' -merge " + irm.nameMultiY(y1r,y2r,"TX") + " " + prevFutur.nameMultiY(y1,y2,"TXcor1") + " " + prevFutur.nameMultiY(y1,y2,"TXcor");
-    std::cout << aCommand << std::endl;
-    system(aCommand.c_str());
-
-    // creation du tableau de synthèse sur base de ces indices corrigées
-     prevFutur.multiYStatTable(y1,y2,"cor");
-    }
-
+    system(aCommand.c_str());*/
 }
