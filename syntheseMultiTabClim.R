@@ -8,6 +8,8 @@ path <- "/home/jo/Documents/climat_MAR/all"
 path <- "/home/jo/Documents/climat_MAR/all-20230215"
 path <- "/home/jo/Documents/climat_MAR/all-20230306"
 
+path <- "/home/jo/Documents/climat_MAR/all-20230327"
+
 setwd(path)
 dirs <- list.dirs(path = path, recursive = FALSE)
 
@@ -106,11 +108,14 @@ for (dir in dirs) {
   }
 }
 
-write.table(df,"syntheseMAR3.13-ArdenneAllModels.csv",row.names = F)
+write.table(df,"syntheseMAR3.13-ArdenneAllModelsCor.csv",row.names = F)
 #moyenne maintenant
 summary <- df %>% group_by(ssp,periode) %>% summarise(nombreModels=n(),MBRR=mean(MBRR),TTG=mean(TTG),TTX=max(TTX),TTN=min(TTN),m4_9MBRR=mean(m4_9MBRR),m4_9TTG=mean(m4_9TTG),BHE=mean(BHE),BHE2=mean(BHE2),GSL=mean(GSL.6.8.),SD30=mean(SD30),SD35=mean(SD35),SD40=mean(SD40),SDG20=mean(SDG20), SDG25=mean(SDG25),FD=mean(FD),FDG=mean(FDG), HPD=mean(HPD),SF=mean(SF))
 
-write.table(summary,"syntheseMAR3.13-Ardenne.csv",row.names = F)
+summary <- df %>% group_by(ssp,periode) %>% summarise(nombreModels=n(),MBRR=mean(MBRR),TG=mean(TG),TX=max(TX),TN=min(TN),m4_9MBRR=mean(m4_9MBRR),m4_9TG=mean(m4_9TG),BHE=mean(BHE),BHE2=mean(BHE2),GSL=mean(GSL.6.8.),SD30=mean(SD30),SD35=mean(SD35),SD40=mean(SD40),SDG20=mean(SDG20), SDG25=mean(SDG25),FD=mean(FD),FDG=mean(FDG), HPD=mean(HPD),SF=mean(SF))
+
+
+write.table(summary,"syntheseMAR3.13-ArdenneCor.csv",row.names = F)
 
 #######################################################################################################
 
