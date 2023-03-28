@@ -635,41 +635,119 @@ void MAR::multiYStat(int y1,int y2){
 
 void MAR::multiYCorrection(int y1, int y2, MAR * era5, MAR *GCMhisto){
     int y1ref(1991),y2ref(2020);
-    std::cout << "MAR::multiY with correction for use of absolute values" << std::endl;
+    std::cout << "MAR::multiY with correction for use of absolute values \n" << std::endl;
     std::string aCommand;
 
     // je me base sur des résultats généré par d'autres méthodes, donc je les refais tourner ici pour plus de prudence
-    multiYStat(y1,y2);
+    //multiYStat(y1,y2);
     //era5->multiYStat(y1ref,y2ref);
-    GCMhisto->multiYStat(y1ref,y2ref);
+    //GCMhisto->multiYStat(y1ref,y2ref);
 
     // calcul de la standard déviation (la variabilité interannuelle en climato) des 30 valeurs annuelles sur 1991-2020 pour Era5 et pour le modèle en cours
 
-    era5->varInterannuelle(y1ref,y2ref,"T2mG");
-    GCMhisto->varInterannuelle(y1ref,y2ref,"T2mG");
+    // Température
+
+    era5->varInterannuelle(y1ref,y2ref,"T2mG","monthly","TGstd",typeAggreg::meanY);
+    GCMhisto->varInterannuelle(y1ref,y2ref,"T2mG","monthly","TGstd",typeAggreg::meanY);
 
     // TTcorrigée = (TT_Miroc6-ave(TT_Miroc6-1991-2020))/std(TT_Miroc6-1991-2020)*std(TT_ERA5-1991-2020)+ave(TT_ERA5-1991-2020)
     // concatener les 5 variables dans un seul netcdf pour pouvoir ensuite utiliser les formules facilement
-
-    aCommand="cdo -expr,'TG=TG_era5+((T2mG-T_histo)/Tstd_histo)*Tstd_era5;' -merge "+ nameMultiY(y1,y2,"TG") + " -setvar,Tstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"TGstd") + " -setvar,T_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"TG") + " -setvar,TG_era5 " + era5->nameMultiY(y1ref,y2ref,"TG") + " -setvar,Tstd_era5 " + era5->nameMultiY(y1ref,y2ref,"TGstd") + nameMultiY(y1,y2,"TGcor");
-
-    // moyenne sur l'année
-    //aCommand="cdo -s -div -sub -yearmean -selvar,"+Tvar+"G " + nameMultiY(y1,y2,"G") + " -yearmean -selvar,"+Tvar+"G " + nameMultiY(y1ref,y2ref,"G")  + " -mulc -yearstd -selvar,"+Tvar+"G " + nameMultiY(y1ref,y2ref,"G") + " -yearstd -selvar,"+Tvar+"G " + era5->nameMultiY(y1ref,y2ref,"G") + " " + nameMultiY(y1,y2,"TGcor");
+    aCommand="cdo -expr,'TG=TG_era5+((T2mG-T_histo)/Tstd_histo)*Tstd_era5;' -merge -selvar,T2mG "+ nameMultiY(y1,y2,"TG") + " -setvar,Tstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"TGstd") + " -setvar,T_histo -selvar,T2mG " + GCMhisto->nameMultiY(y1ref,y2ref,"TG") + " -setvar,TG_era5 -selvar,T2mG " + era5->nameMultiY(y1ref,y2ref,"TG") + " -setvar,Tstd_era5 " + era5->nameMultiY(y1ref,y2ref,"TGstd") + " " +nameMultiY(y1,y2,"TGcor");
     std::cout << aCommand << "\n" << std::endl;
-    //system(aCommand.c_str());
+    system(aCommand.c_str());
+
+    // Précipitations annuelles
+
+    era5->varInterannuelle(y1ref,y2ref,"RF","monthly","RFstd", typeAggreg::sommeY);
+    GCMhisto->varInterannuelle(y1ref,y2ref,"RF","monthly","RFstd", typeAggreg::sommeY);
+    aCommand="cdo -b F64 -expr,'RF=RF_era5+((RF-RF_histo)/RFstd_histo)*RFstd_era5;' -merge "+ nameMultiY(y1,y2,"MBRRS") + " -setvar,RFstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"RFstd") + " -setvar,RF_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"MBRRS") + " -setvar,RF_era5 " + era5->nameMultiY(y1ref,y2ref,"MBRRS") + " -setvar,RFstd_era5 " + era5->nameMultiY(y1ref,y2ref,"RFstd") + " " +nameMultiY(y1,y2,"MBRRScor");
+    std::cout << aCommand << "\n" << std::endl;
+    system(aCommand.c_str());
+
+    // Précipitations végé
+
+    // sur la période de végé: comment appliquer la correction? mois par mois, ça semble logique..
+    //era5->varInterannuelle(y1ref,y2ref,"RF","monthly","RFymonstd", typeAggreg::sommeYmon);
+    //GCMhisto->varInterannuelle(y1ref,y2ref,"RF","monthly","RFymonstd", typeAggreg::sommeYmon);
+
+    era5->varInterannuelle(y1ref,y2ref,"RF","monthly","RF4_9std", typeAggreg::sommeYmon);
+    GCMhisto->varInterannuelle(y1ref,y2ref,"RF","monthly","RF4_9std", typeAggreg::sommeYmon);
+
+    aCommand="cdo -b F64 -yearsum -selmonth,4/9 -expr,'RF=RF_era5+((RF-RF_histo)/RFstd_histo)*RFstd_era5;' -merge -yearsum -selmonth,4/9 -selvar,RF " + nameMultiY(y1,y2,"G")+" -setvar,RFstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"RF4_9std") + " -setvar,RF_histo -yearsum -selmonth,4/9 -selvar,RF " + GCMhisto->nameMultiY(y1ref,y2ref,"G") + " -setvar,RF_era5 -yearsum -selmonth,4/9 -selvar,RF " + era5->nameMultiY(y1ref,y2ref,"G") + " -setvar,RFstd_era5 " + era5->nameMultiY(y1ref,y2ref,"RF4_9std") + " " +nameMultiY(y1,y2,"m4_9MBRRScor");
+    std::cout << aCommand << "\n" << std::endl;
+    system(aCommand.c_str());
+
+    era5->varInterannuelle(y1ref,y2ref,"T2mG","monthly","TG4_9std", typeAggreg::meanYmon);
+    GCMhisto->varInterannuelle(y1ref,y2ref,"T2mG","monthly","TG4_9std", typeAggreg::meanYmon);
+
+    aCommand="cdo -b F64 -expr,'TG=TG_era5+((T2mG-T_histo)/Tstd_histo)*Tstd_era5;' -merge -yearmean -selmonth,4/9 -selvar,T2mG " + nameMultiY(y1,y2,"G")+" -setvar,Tstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"TG4_9std") + " -setvar,T_histo -yearmean -selmonth,4/9 -selvar,T2mG " + GCMhisto->nameMultiY(y1ref,y2ref,"G") + " -setvar,TG_era5 -yearmean -selmonth,4/9 -selvar,T2mG " + era5->nameMultiY(y1ref,y2ref,"G") + " -setvar,Tstd_era5 " + era5->nameMultiY(y1ref,y2ref,"TG4_9std") + " " +nameMultiY(y1,y2,"m4_9TGcor");
+    std::cout << aCommand << "\n" << std::endl;
+    system(aCommand.c_str());
+
+    // BHE
+    // création couche BHE pour chaque année ; devrait être fait en amont.
+    if(0){
+    aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -selname,RO3,ET,SL "+ nameMultiY(y1,y2,"monthly")+" "+  nameMultiY(y1,y2,"BHEy");
+    system(aCommand.c_str());
+    aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -selname,RO3,ET,SL "+ era5->nameMultiY(y1ref,y2ref,"monthly")+" "+  era5->nameMultiY(y1ref,y2ref,"BHEy");
+    system(aCommand.c_str());
+    aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -selname,RO3,ET,SL "+ GCMhisto->nameMultiY(y1ref,y2ref,"monthly")+" "+  GCMhisto->nameMultiY(y1ref,y2ref,"BHEy");
+    system(aCommand.c_str());
+    }
+
+    era5->varInterannuelle(y1ref,y2ref,"BHE","BHEy", "BHEstd", typeAggreg::sommeYmon);
+    GCMhisto->varInterannuelle(y1ref,y2ref,"BHE","BHEy", "BHEstd", typeAggreg::sommeYmon);
+
+    aCommand="cdo -b F64 -expr,'BHE=BHE_era5+((BHE-BHE_histo)/BHEstd_histo)*BHEstd_era5;' -merge " + nameMultiY(y1,y2,"BHE")+" -setvar,BHEstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"BHEstd") + " -setvar,BHE_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"BHE") + " -setvar,BHE_era5 " + era5->nameMultiY(y1ref,y2ref,"BHE") + " -setvar,BHEstd_era5 " + era5->nameMultiY(y1ref,y2ref,"BHEstd") + " " +nameMultiY(y1,y2,"BHEcor");
+    std::cout << aCommand << "\n" << std::endl;
+    system(aCommand.c_str());
+
+    // nb de jours dépassant un seuil de T
+
+    era5->varInterannuelle(y1ref,y2ref,"SD","SD30", "SD30std", typeAggreg::meanY);
+    GCMhisto->varInterannuelle(y1ref,y2ref,"SD","SD30", "SD30std", typeAggreg::meanY);
+
+    aCommand="cdo -b F64 -expr,'SD=SD_era5+((SD-SD_histo)/SDstd_histo)*SDstd_era5;' -merge -timmean " + nameMultiY(y1,y2,"SD30")+" -setvar,SDstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"SD30std") + " -setvar,SD_histo -timmean " + GCMhisto->nameMultiY(y1ref,y2ref,"SD30") + " -setvar,SD_era5 -timmean " + era5->nameMultiY(y1ref,y2ref,"SD30") + " -setvar,SDstd_era5 " + era5->nameMultiY(y1ref,y2ref,"SD30std") + " " +nameMultiY(y1,y2,"SD30cor");
+    std::cout << aCommand << "\n" << std::endl;
+    system(aCommand.c_str());
+
+    era5->varInterannuelle(y1ref,y2ref,"SD","SD35", "SD35std", typeAggreg::meanY);
+    GCMhisto->varInterannuelle(y1ref,y2ref,"SD","SD35", "SD35std", typeAggreg::meanY);
+
+    aCommand="cdo -b F64 -expr,'SD=SD_era5+((SD-SD_histo)/SDstd_histo)*SDstd_era5;' -merge -timmean " + nameMultiY(y1,y2,"SD35")+" -setvar,SDstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"SD35std") + " -setvar,SD_histo -timmean " + GCMhisto->nameMultiY(y1ref,y2ref,"SD35") + " -setvar,SD_era5 -timmean " + era5->nameMultiY(y1ref,y2ref,"SD35") + " -setvar,SDstd_era5 " + era5->nameMultiY(y1ref,y2ref,"SD35std") + " " +nameMultiY(y1,y2,"SD35cor");
+    std::cout << aCommand << "\n" << std::endl;
+    system(aCommand.c_str());
+
+
+    era5->varInterannuelle(y1ref,y2ref,"FD","FD", "FDstd", typeAggreg::meanY);
+    GCMhisto->varInterannuelle(y1ref,y2ref,"FD","FD", "FDstd", typeAggreg::meanY);
+
+    aCommand="cdo -b F64 -expr,'FD=FD_era5+((FD-FD_histo)/FDstd_histo)*FDstd_era5;' -merge -timmean " + nameMultiY(y1,y2,"FD")+" -setvar,FDstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"FDstd") + " -setvar,FD_histo -timmean " + GCMhisto->nameMultiY(y1ref,y2ref,"FD") + " -setvar,FD_era5 -timmean " + era5->nameMultiY(y1ref,y2ref,"FD") + " -setvar,FDstd_era5 " + era5->nameMultiY(y1ref,y2ref,"FDstd") + " " +nameMultiY(y1,y2,"FDcor");
+    std::cout << aCommand << "\n" << std::endl;
+    system(aCommand.c_str());
 
     // création du tableau
-    if (0){
-        multiYStatTable(y1,y2,"ano");
+    if (1){
+        multiYStatTable(y1,y2,"cor");
     }
 
 }
 
-void MAR::varInterannuelle(int y1, int y2,std::string aVar){
+void MAR::varInterannuelle(int y1, int y2, std::string aVar, std::string aFileIn,std::string aVarOut, typeAggreg agr=typeAggreg::meanY){
     // l'écart-type se calcule sur les 30 années, donc 30 valeurs
-    std::string aCommand="cdo -s -ensstd -selvar,"+aVar+ " " + nameMultiY(y1,y2,"G") + "  " + nameMultiY(y1,y2,aVar+"std");
+    std::string yearAgr = "yearmean";
+    switch (agr){
+    case (typeAggreg::sommeY): {yearAgr = " -timstd -yearsum"; break;}
+    case (typeAggreg::meanY): {yearAgr = " -timstd -yearmean"; break;}
+        //case (typeAggreg::meanYmon): {yearAgr = " -ymonstd -ymonmean"; break;}  // fonctionne pas, je sais pas pourquoi : tout les modèles climatiques ont la même valeur en réponse. je passe par une valeur par an pour tester (voir ci-dessous
+        //case (typeAggreg::sommeYmon): {yearAgr = " -ymonstd -ymonmean"; break;}
+    case (typeAggreg::meanYmon): {yearAgr = " -timstd -yearmean -selmonth,4/9"; break;}  // fonctionne pas, je sais pas pourquoi. je passe par une valeur par an pour tester
+    case (typeAggreg::sommeYmon): {yearAgr = " -timstd -yearsum -selmonth,4/9"; break;}
+    }
+
+    std::string aCommand="cdo "+yearAgr+" -selvar,"+aVar+ " " + nameMultiY(y1,y2,aFileIn) + "  " + nameMultiY(y1,y2,aVarOut);
     std::cout << aCommand << "\n" << std::endl;
-    //system(aCommand.c_str());
+    system(aCommand.c_str());
 }
 
 void MAR::multiYStatTable(int y1,int y2,std::string post){
@@ -693,53 +771,93 @@ void MAR::multiYStatTable(int y1,int y2,std::string post){
         // ofs <<std::to_string(zbio) << ";";
         //ofs <<"'"<<zbio << "';";
         ofs <<vZbio.at(j) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"MBRRS"+post) ;//+ " >> " +aTable;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo  -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TG"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmax -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TX"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmin -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TN"+post) ;
-        //std::cout << aCommand << std::endl;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"m4_9MBRRS"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo  -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"m4_9TG"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"BHE"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"BHE2"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"MBRRS"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"MBRRS"+post) ;//+ " >> " +aTable;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"TG"+post))){
+            aCommand="cdo  -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TG"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"TX"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmax -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TX"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"TN"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmin -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TN"+post) ;
+            //std::cout << aCommand << std::endl;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"m4_9MBRRS"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"m4_9MBRRS"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"m4_9TG"+post))){
+            aCommand="cdo  -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"m4_9TG"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"BHE"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"BHE"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"BHE2"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"BHE2"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
         // plusieur date parfois dans le netcdf MAR, je prend la dernière 1990-12-31
         switch (mTypeGrid){
         case irmO: aCommand="cdo -s -W -outputf,%8.6g,80 -selvar,GSL -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"GSL"+post) ; break;
         default: aCommand="cdo -s -W -outputf,%8.6g,80 -selvar,GSL -seldate,"+std::to_string(y2)+"-12-31 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"GSL"+post) ; break;
         }
         // std::cout << aCommand << std::endl;
-        ofs <<exec(aCommand.c_str()) << ";";
+
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"GSL"+post))){
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
 
         //std::cout << " réponse gsl ;" <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SD30"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SD35"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SD40"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SDG20"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SDG25"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"FD"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"FDG"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
-        aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"HPD"+post) ;
-        ofs <<exec(aCommand.c_str()) << ";";
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"SD30"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SD30"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"SD35"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SD35"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"SD40"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SD40"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"SDG20"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SDG20"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"SDG25"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SDG25"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"FD"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"FD"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"FDG"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"FDG"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+        if(boost::filesystem::exists(nameMultiY(y1,y2,"HPD"+post))){
+            aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"HPD"+post) ;
+            ofs <<exec(aCommand.c_str()) << ";";
+        } else {ofs <<"NA;";}
+
         switch (mTypeGrid){
-        case irm:{  aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SF"+post) ;
-            std::cout << aCommand <<std::endl;
-            system(aCommand.c_str());
-            ofs <<exec(aCommand.c_str());
+        case irm:{
+            if(boost::filesystem::exists(nameMultiY(y1,y2,"SF"+post))){
+                aCommand="cdo -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " -timmean "+nameMultiY(y1,y2,"SF"+post) ;
+                std::cout << aCommand <<std::endl;
+                system(aCommand.c_str());
+                ofs <<exec(aCommand.c_str());
+            }
             break;
         }
         }
