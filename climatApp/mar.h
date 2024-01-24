@@ -16,6 +16,13 @@
 
 std::string exec(const char* cmd);
 
+enum typeAggreg {sommeY
+               ,meanY
+               ,sommeYmon
+               ,meanYmon
+                   };
+
+
 
 
 // une classe pour passer de l'horaire à du journalier puis du mensuel
@@ -32,7 +39,7 @@ public:
     void multiYStatTable(int y1,int y2,std::string post="");
 
     void multiYCorrection(int y1, int y2, MAR * era5, MAR * GCMhisto);
-    void varInterannuelle(int y1, int y2,std::string aVar);
+    void varInterannuelle(int y1, int y2, std::string aVar, std::string aFileIn, std::string aVarOut, typeAggreg agr);
      std::string nameMultiY(int y1,int y2, std::string post="");
      std::string nameRastMultiY(int y1,int y2, std::string post);
     std::string dailyFile(int y);
@@ -44,6 +51,8 @@ public:
     //,mOutChunk
 
     void moyenneMobile();
+
+    void moyenneMobileCor(MAR * era5, MAR * GCMhisto);
 
     typeGrid mTypeGrid;
 

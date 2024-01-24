@@ -194,22 +194,22 @@ int main(int argc, char *argv[])
             break;
         }
         case 7:{
-
+             int y1(y.at(0)), y2(y.at(1));
             // ./climatApp --outil 7 --input "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/" --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --mode 2
             std::cout << " MAR netcdf : passage de l'horaire au journalier" << std::endl;
             MAR mar(input,input2,grid,0);
-            //mar.hourly2daily();
-            //mar.daily2monthly();
+            mar.hourly2daily();
+            mar.daily2monthly();
             //mar.moyenneMobile();
 
-            mar.multiY(1991,2020);
-            mar.multiYStat(1991,2020);
-            mar.multiY(2021,2050);
+            mar.multiY(y1,y2);
+            mar.multiYStat(y1,y2);
+           /* mar.multiY(2021,2050);
             mar.multiYStat(2021,2050);
             mar.multiY(2051,2080);
             mar.multiYStat(2051,2080);
             mar.multiY(2081,2100);
-            mar.multiYStat(2081,2100);
+            mar.multiYStat(2081,2100);*/
 
             break;
         }
@@ -220,6 +220,7 @@ int main(int argc, char *argv[])
             if (vm.count("input3")) {input3=vm["input3"].as<std::string>();}
             int y1(y.at(0)), y2(y.at(1));   // période de simulation
             correctionPrevMar(y1,y2);
+
             // ./climatApp --outil 7 --input "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/" --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --mode 2
 
             break;
@@ -227,9 +228,11 @@ int main(int argc, char *argv[])
 
         case 40:{
             // travail sur un fichier netcdf de l'IRM, créé par l'outil 4 - il faut structurer tout ça comme les sorties MAR ; je dois donc faire des fichiers individuel pour chaque année.
+
+            // maintenant je peux utiliser l'outil 7 pour faire tout cela, redondant..
             MAR mar(input,input2,irmO,0);
-            mar.hourly2daily();
-            mar.daily2monthly();
+            //mar.hourly2daily();
+            //mar.daily2monthly();
             if(1){
                 mar.multiY(1961,1990);
                 mar.multiYStat(1961,1990);
@@ -512,12 +515,13 @@ void processSAFRAN(){
 void correctionPrevMar(int y1, int y2){
     std::cout << " correction pour valeurs absolues simulation climat futur" << std::endl;
 
-    MAR era5("/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/",input2,typeGrid::irm,0);
+    MAR era5("/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR-14-ERA5",input2,typeGrid::irm,0);
     MAR GCMsimu(input,input2,typeGrid::irm,0); // prévision future pour ce GCM
-    //MAR irm("/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/IRM/",input2,typeGrid::irmO,0);
     MAR GCMhisto(input3,input2,typeGrid::irm,0); // réanalyse pour ce GCM
 
-    GCMsimu.multiYCorrection(y1,y2,& era5, & GCMhisto);
+    //GCMsimu.multiYCorrection(y1,y2,& era5, & GCMhisto);
+
+    GCMsimu.moyenneMobileCor(& era5, & GCMhisto);
 
     /* calcul du biais entre observations irm et reanalyse MAR -- OLD OLD test numéro 1 qui n'est pas la bonne démarche hélas
     //aCommand="cdo -sub " + irm.nameMultiY(y1r,y2r,"TG") + " " + era5.nameMultiY(y1r,y2r,"TG") + " " + era5.nameMultiY(y1r,y2r,"TGbiais");

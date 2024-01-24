@@ -4,15 +4,20 @@
 library(tidyverse)
 
 
+
 path <- "/home/jo/Documents/climat_MAR/all"
 path <- "/home/jo/Documents/climat_MAR/all-20230327"
+
 path <- "/home/jo/Documents/climat_MAR/MAR-14-all"
+
+path <- "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR-all/"
+
 
 setwd(path)
 dirs <- list.dirs(path = path, recursive = FALSE)
 
 df <- data.frame(date=as.integer(),model=as.character(),MBRR=as.double(),m4_9MBRR=as.double())
-
+# 
 ds <-1
 for (dir in dirs) {
   
@@ -94,7 +99,7 @@ for (dir in dirs) {
     df$timeCentral[nrow(df)] <- timeCentrale
     df$ssp[nrow(df)] <- ssp
     df$model[nrow(df)] <- model
-    first<- FALSE
+     first<- FALSE
     } else {
       d$periode[nrow(d)] <- timeName
       d$timeCentral[nrow(d)] <- timeCentrale
