@@ -52,6 +52,8 @@ public:
 
     void moyenneMobile();
 
+    void moyenneMobileCor(MAR * era5, MAR * GCMhisto);
+
     typeGrid mTypeGrid;
 
     //MY = multi-year

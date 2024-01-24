@@ -220,6 +220,7 @@ int main(int argc, char *argv[])
             if (vm.count("input3")) {input3=vm["input3"].as<std::string>();}
             int y1(y.at(0)), y2(y.at(1));   // période de simulation
             correctionPrevMar(y1,y2);
+
             // ./climatApp --outil 7 --input "/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/" --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --mode 2
 
             break;
@@ -514,12 +515,13 @@ void processSAFRAN(){
 void correctionPrevMar(int y1, int y2){
     std::cout << " correction pour valeurs absolues simulation climat futur" << std::endl;
 
-    MAR era5("/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR/reanalyse-IRMgrid/",input2,typeGrid::irm,0);
+    MAR era5("/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR-14-ERA5",input2,typeGrid::irm,0);
     MAR GCMsimu(input,input2,typeGrid::irm,0); // prévision future pour ce GCM
-    //MAR irm("/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/IRM/",input2,typeGrid::irmO,0);
     MAR GCMhisto(input3,input2,typeGrid::irm,0); // réanalyse pour ce GCM
 
-    GCMsimu.multiYCorrection(y1,y2,& era5, & GCMhisto);
+    //GCMsimu.multiYCorrection(y1,y2,& era5, & GCMhisto);
+
+    GCMsimu.moyenneMobileCor(& era5, & GCMhisto);
 
     /* calcul du biais entre observations irm et reanalyse MAR -- OLD OLD test numéro 1 qui n'est pas la bonne démarche hélas
     //aCommand="cdo -sub " + irm.nameMultiY(y1r,y2r,"TG") + " " + era5.nameMultiY(y1r,y2r,"TG") + " " + era5.nameMultiY(y1r,y2r,"TGbiais");

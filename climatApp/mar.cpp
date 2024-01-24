@@ -15,7 +15,6 @@ MAR::MAR(std::string aWd, std::string aZbioNc, typeGrid aGrid, bool fromDaily): 
   ,mTypeGrid(aGrid)
   ,mFromDaily(fromDaily)
 {
-
     int nbCharToRm(0);
     if (mTypeGrid==SOP75){nbCharToRm=14;}
     if (mTypeGrid==SOP75){nbCharToRm=5;}// SOP75 avec ER5
@@ -379,6 +378,44 @@ void MAR::moyenneMobile(){
     }
 
 }
+// avec correcition des valeurs absolues
+
+void MAR::moyenneMobileCor(MAR * era5, MAR * GCMhisto){
+
+    std::string aTable(mOutMY+"/tableMoyMobileZBIOcor.csv");
+    std::string aCommand;
+    int y1ref(1991), y2ref(2020);
+    std::ofstream ofs (aTable, std::ofstream::out);
+    ofs << "Decennie;ZBIO;TG\n";
+    std::vector<std::string> vZbio={"NordSM","Ardenne","HA", "HCO", "BMA"};
+
+    for (int d : {2,3,4,5,6,7,8,9}){
+        int y1(2000+d*10+1),y2(2000+(d+1)*10);
+        multiY(y1,y2);
+        multiYStat(y1,y2);
+
+        era5->varInterannuelle(y1ref,y2ref,"T2mG","monthly","TGstd",typeAggreg::meanY);
+        GCMhisto->varInterannuelle(y1ref,y2ref,"T2mG","monthly","TGstd",typeAggreg::meanY);
+
+        // TTcorrigée = (TT_Miroc6-ave(TT_Miroc6-1991-2020))/std(TT_Miroc6-1991-2020)*std(TT_ERA5-1991-2020)+ave(TT_ERA5-1991-2020)
+        // concatener les 5 variables dans un seul netcdf pour pouvoir ensuite utiliser les formules facilement
+        aCommand="cdo -expr,'TG=TG_era5+((T2mG-T_histo)/Tstd_histo)*Tstd_era5;' -merge -selvar,T2mG "+ nameMultiY(y1,y2,"TG") + " -setvar,Tstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"TGstd") + " -setvar,T_histo -selvar,T2mG " + GCMhisto->nameMultiY(y1ref,y2ref,"TG") + " -setvar,TG_era5 -selvar,T2mG " + era5->nameMultiY(y1ref,y2ref,"TG") + " -setvar,Tstd_era5 " + era5->nameMultiY(y1ref,y2ref,"TGstd") + " " +nameMultiY(y1,y2,"TGcor");
+        std::cout << aCommand << "\n" << std::endl;
+        system(aCommand.c_str());
+
+        // sortie pour chaque zbio
+        int j(0);
+        for (std::string zbio : {"mask=(ZBIO==6)+(ZBIO==7);","mask=(ZBIO==10)+(ZBIO==1)+(ZBIO==2);","mask=ZBIO==10;","mask=ZBIO==1;","mask=ZBIO==2;"}){
+            ofs <<y1<<";"<< vZbio.at(j) << ";";
+            aCommand="cdo  -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TGcor") ;
+            ofs <<exec(aCommand.c_str()) << "\n";
+            j++;
+        }
+
+    }
+
+}
+
 
 void MAR::multiYStat(int y1,int y2){
 
@@ -634,7 +671,10 @@ void MAR::multiYStat(int y1,int y2){
 
 
 void MAR::multiYCorrection(int y1, int y2, MAR * era5, MAR *GCMhisto){
-    int y1ref(1991),y2ref(2020);
+
+    //int y1ref(1991),y2ref(2020);
+    // XF privilégie 1980 2010 comme période de ref.
+    int y1ref(1981),y2ref(2010);
     std::cout << "MAR::multiY with correction for use of absolute values \n" << std::endl;
     std::string aCommand;
 
@@ -656,6 +696,8 @@ void MAR::multiYCorrection(int y1, int y2, MAR * era5, MAR *GCMhisto){
     std::cout << aCommand << "\n" << std::endl;
     system(aCommand.c_str());
 
+    exportRaster(nameMultiY(y1,y2,"TGcor")+":TG",nameRastMultiY(y1,y2,"TGcor"),mTypeGrid);
+
     // Précipitations annuelles
 
     era5->varInterannuelle(y1ref,y2ref,"RF","monthly","RFstd", typeAggreg::sommeY);
@@ -663,6 +705,7 @@ void MAR::multiYCorrection(int y1, int y2, MAR * era5, MAR *GCMhisto){
     aCommand="cdo -b F64 -expr,'RF=RF_era5+((RF-RF_histo)/RFstd_histo)*RFstd_era5;' -merge "+ nameMultiY(y1,y2,"MBRRS") + " -setvar,RFstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"RFstd") + " -setvar,RF_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"MBRRS") + " -setvar,RF_era5 " + era5->nameMultiY(y1ref,y2ref,"MBRRS") + " -setvar,RFstd_era5 " + era5->nameMultiY(y1ref,y2ref,"RFstd") + " " +nameMultiY(y1,y2,"MBRRScor");
     std::cout << aCommand << "\n" << std::endl;
     system(aCommand.c_str());
+    exportRaster(nameMultiY(y1,y2,"MBRRScor")+":RF",nameRastMultiY(y1,y2,"MBRRScor"),mTypeGrid);
 
     // Précipitations végé
 
@@ -683,26 +726,6 @@ void MAR::multiYCorrection(int y1, int y2, MAR * era5, MAR *GCMhisto){
     aCommand="cdo -b F64 -expr,'TG=TG_era5+((T2mG-T_histo)/Tstd_histo)*Tstd_era5;' -merge -yearmean -selmonth,4/9 -selvar,T2mG " + nameMultiY(y1,y2,"G")+" -setvar,Tstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"TG4_9std") + " -setvar,T_histo -yearmean -selmonth,4/9 -selvar,T2mG " + GCMhisto->nameMultiY(y1ref,y2ref,"G") + " -setvar,TG_era5 -yearmean -selmonth,4/9 -selvar,T2mG " + era5->nameMultiY(y1ref,y2ref,"G") + " -setvar,Tstd_era5 " + era5->nameMultiY(y1ref,y2ref,"TG4_9std") + " " +nameMultiY(y1,y2,"m4_9TGcor");
     std::cout << aCommand << "\n" << std::endl;
     system(aCommand.c_str());
-
-    // BHE
-    // création couche BHE pour chaque année ; devrait être fait en amont.
-    if(0){
-    aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -selname,RO3,ET,SL "+ nameMultiY(y1,y2,"monthly")+" "+  nameMultiY(y1,y2,"BHEy");
-    system(aCommand.c_str());
-    aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -selname,RO3,ET,SL "+ era5->nameMultiY(y1ref,y2ref,"monthly")+" "+  era5->nameMultiY(y1ref,y2ref,"BHEy");
-    system(aCommand.c_str());
-    aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -selname,RO3,ET,SL "+ GCMhisto->nameMultiY(y1ref,y2ref,"monthly")+" "+  GCMhisto->nameMultiY(y1ref,y2ref,"BHEy");
-    system(aCommand.c_str());
-    }
-
-    era5->varInterannuelle(y1ref,y2ref,"BHE","BHEy", "BHEstd", typeAggreg::sommeYmon);
-    GCMhisto->varInterannuelle(y1ref,y2ref,"BHE","BHEy", "BHEstd", typeAggreg::sommeYmon);
-
-    aCommand="cdo -b F64 -expr,'BHE=BHE_era5+((BHE-BHE_histo)/BHEstd_histo)*BHEstd_era5;' -merge " + nameMultiY(y1,y2,"BHE")+" -setvar,BHEstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"BHEstd") + " -setvar,BHE_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"BHE") + " -setvar,BHE_era5 " + era5->nameMultiY(y1ref,y2ref,"BHE") + " -setvar,BHEstd_era5 " + era5->nameMultiY(y1ref,y2ref,"BHEstd") + " " +nameMultiY(y1,y2,"BHEcor");
-    std::cout << aCommand << "\n" << std::endl;
-    system(aCommand.c_str());
-
-    // nb de jours dépassant un seuil de T
 
     era5->varInterannuelle(y1ref,y2ref,"SD","SD30", "SD30std", typeAggreg::meanY);
     GCMhisto->varInterannuelle(y1ref,y2ref,"SD","SD30", "SD30std", typeAggreg::meanY);
@@ -725,6 +748,27 @@ void MAR::multiYCorrection(int y1, int y2, MAR * era5, MAR *GCMhisto){
     aCommand="cdo -b F64 -expr,'FD=FD_era5+((FD-FD_histo)/FDstd_histo)*FDstd_era5;' -merge -timmean " + nameMultiY(y1,y2,"FD")+" -setvar,FDstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"FDstd") + " -setvar,FD_histo -timmean " + GCMhisto->nameMultiY(y1ref,y2ref,"FD") + " -setvar,FD_era5 -timmean " + era5->nameMultiY(y1ref,y2ref,"FD") + " -setvar,FDstd_era5 " + era5->nameMultiY(y1ref,y2ref,"FDstd") + " " +nameMultiY(y1,y2,"FDcor");
     std::cout << aCommand << "\n" << std::endl;
     system(aCommand.c_str());
+
+    // BHE
+    // création couche BHE pour chaque année ; devrait être fait en amont.
+     if(1){
+    aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -selname,RO3,ET,SL "+ nameMultiY(y1,y2,"monthly")+" "+  nameMultiY(y1,y2,"BHEy");
+    system(aCommand.c_str());
+    aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -selname,RO3,ET,SL "+ era5->nameMultiY(y1ref,y2ref,"monthly")+" "+  era5->nameMultiY(y1ref,y2ref,"BHEy");
+    system(aCommand.c_str());
+    aCommand="cdo -b F64 -expr,'BHE=RO3-ET-SL;' -yearsum -selmonth,4/9 -selname,RO3,ET,SL "+ GCMhisto->nameMultiY(y1ref,y2ref,"monthly")+" "+  GCMhisto->nameMultiY(y1ref,y2ref,"BHEy");
+    system(aCommand.c_str());
+    }
+
+    era5->varInterannuelle(y1ref,y2ref,"BHE","BHEy", "BHEstd", typeAggreg::sommeYmon);
+    GCMhisto->varInterannuelle(y1ref,y2ref,"BHE","BHEy", "BHEstd", typeAggreg::sommeYmon);
+
+    aCommand="cdo -b F64 -expr,'BHE=BHE_era5+((BHE-BHE_histo)/BHEstd_histo)*BHEstd_era5;' -merge " + nameMultiY(y1,y2,"BHE")+" -setvar,BHEstd_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"BHEstd") + " -setvar,BHE_histo " + GCMhisto->nameMultiY(y1ref,y2ref,"BHE") + " -setvar,BHE_era5 " + era5->nameMultiY(y1ref,y2ref,"BHE") + " -setvar,BHEstd_era5 " + era5->nameMultiY(y1ref,y2ref,"BHEstd") + " " +nameMultiY(y1,y2,"BHEcor");
+    std::cout << aCommand << "\n" << std::endl;
+    system(aCommand.c_str());
+
+    exportRaster(nameMultiY(y1,y2,"BHEcor")+":BHE",nameRastMultiY(y1,y2,"BHEcor"),mTypeGrid);
+    // nb de jours dépassant un seuil de T
 
     // création du tableau
     if (1){
