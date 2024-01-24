@@ -1,14 +1,12 @@
 # 2023 01 - j'ai plusieurs tableau synthétiques du climat (passé et projection futur) et je voudrai les fusionner pour une zone bioclimatique donnée
+# updated 2024 01 pour version 3.14 MAR
 
 library(tidyverse)
 
 
 path <- "/home/jo/Documents/climat_MAR/all"
-
-path <- "/home/jo/Documents/climat_MAR/all-20230215"
-path <- "/home/jo/Documents/climat_MAR/all-20230306"
-
 path <- "/home/jo/Documents/climat_MAR/all-20230327"
+path <- "/home/jo/Documents/climat_MAR/MAR-14-all"
 
 setwd(path)
 dirs <- list.dirs(path = path, recursive = FALSE)
@@ -82,8 +80,8 @@ for (dir in dirs) {
   
   for (f in list.files(dir)){
     
-    model <- substr(dirName,1,nchar(dirName)-7)
-    ssp <- substr(dirName,nchar(dirName)-5,nchar(dirName))
+    model <- substr(dirName,1,nchar(dirName)-4)
+    ssp <- substr(dirName,nchar(dirName)-2,nchar(dirName))
     
     timeName <- substr(f,6,14)
     timeCentrale <- as.integer(substr(timeName,1,4))+ (as.integer(substr(timeName,6,9))-as.integer(substr(timeName,1,4)))/2
@@ -108,19 +106,19 @@ for (dir in dirs) {
   }
 }
 
-write.table(df,"syntheseMAR3.13-ArdenneAllModelsCor.csv",row.names = F)
+write.table(df,"syntheseMAR3.14-ArdenneAllModelsCor.csv",row.names = F)
 #moyenne maintenant
-summary <- df %>% group_by(ssp,periode) %>% summarise(nombreModels=n(),MBRR=mean(MBRR),TTG=mean(TTG),TTX=max(TTX),TTN=min(TTN),m4_9MBRR=mean(m4_9MBRR),m4_9TTG=mean(m4_9TTG),BHE=mean(BHE),BHE2=mean(BHE2),GSL=mean(GSL.6.8.),SD30=mean(SD30),SD35=mean(SD35),SD40=mean(SD40),SDG20=mean(SDG20), SDG25=mean(SDG25),FD=mean(FD),FDG=mean(FDG), HPD=mean(HPD),SF=mean(SF))
+#summary <- df %>% group_by(ssp,periode) %>% summarise(nombreModels=n(),MBRR=mean(MBRR),TTG=mean(TTG),TTX=max(TTX),TTN=min(TTN),m4_9MBRR=mean(m4_9MBRR),m4_9TTG=mean(m4_9TTG),BHE=mean(BHE),BHE2=mean(BHE2),GSL=mean(GSL.6.8.),SD30=mean(SD30),SD35=mean(SD35),SD40=mean(SD40),SDG20=mean(SDG20), SDG25=mean(SDG25),FD=mean(FD),FDG=mean(FDG), HPD=mean(HPD),SF=mean(SF))
 
 summary <- df %>% group_by(ssp,periode) %>% summarise(nombreModels=n(),MBRR=mean(MBRR),TG=mean(TG),TX=max(TX),TN=min(TN),m4_9MBRR=mean(m4_9MBRR),m4_9TG=mean(m4_9TG),BHE=mean(BHE),BHE2=mean(BHE2),GSL=mean(GSL.6.8.),SD30=mean(SD30),SD35=mean(SD35),SD40=mean(SD40),SDG20=mean(SDG20), SDG25=mean(SDG25),FD=mean(FD),FDG=mean(FDG), HPD=mean(HPD),SF=mean(SF))
 
 
-write.table(summary,"syntheseMAR3.13-ArdenneCor.csv",row.names = F)
+write.table(summary,"syntheseMAR3.14-ArdenneCor.csv",row.names = F)
 
 #######################################################################################################
 
 # synthèse des moyenne mobile de température annuelle par zbio
-path <- "/home/jo/Documents/carteApt/Andyne_catalogues/climat/moyMob"
+path <- "/home/jo/Documents/carteApt/Andyne_catalogues/climat_CS/moyMob"
 setwd(path)
 test <- 1
 for (f in list.files(getwd())){
@@ -133,7 +131,7 @@ for (f in list.files(getwd())){
     if(test){dall <- d
     test <- 0}else{dall <- rbind(dall,d)}
 }
-summary <- dall[!dall$ZBIO %in% c("Ardenne","NordSM"),] %>% group_by(ssp,Decennie,ZBIO) %>% summarise(TTG=mean(TTG))
+summary <- dall[!dall$ZBIO %in% c("Ardenne","NordSM"),] %>% group_by(ssp,Decennie,ZBIO) %>% summarise(TG=mean(TG))
 
 #write.table(summary,"evolTTG.csv",row.names = F)
 
@@ -144,7 +142,16 @@ d585 %>%
   geom_line() +   scale_fill_manual(values=c("#E69F00", "#56B4E9","#999999"))
 
 
+filename <- paste("evolTemp.pdf", sep="")
+pdf(filename,width=8,height=6,colormodel='cmyk')
+#xlab="Années",ylab="Température moyenne annuelle [C°]"
+plot(d585$Decennie[d585$ZBIO=="HA"]+5,d585$TG[d585$ZBIO=="HA"],ylim=c(8,13),xlim=c(2020,2100),xlab="",ylab="", type="l",lwd=2.5,col="#5c8944", cex.axis=1.5
+     ,yaxp = round(c(8,
+                     13,
+                     10)))
+lines(d585$Decennie[d585$ZBIO=="BMA"]+5,d585$TG[d585$ZBIO=="BMA"], type = "l", lwd = 2.5,col="#cdf57a")
+lines(d585$Decennie[d585$ZBIO=="HCO"]+5,d585$TG[d585$ZBIO=="HCO"], type = "l", lwd = 2.5,col="#89cd66")
+# ligne horizontale pour donner un repère : correspond au climat nord sillon Sambre et meuse
+abline(h=9.6, lwd = 2.5, col="#FFA500",lty=2)
+dev.off()
 
-plot(d585$Decennie[d585$ZBIO=="HA"]+5,d585$TTG[d585$ZBIO=="HA"],ylim=c(8,13),xlim=c(2020,2100),xlab="Années",ylab="Température moyenne annuelle [C°]", type="l",lwd=2,col="#5c8944")
-lines(d585$Decennie[d585$ZBIO=="BMA"]+5,d585$TTG[d585$ZBIO=="BMA"], type = "l", lwd = 2,col="#cdf57a")
-lines(d585$Decennie[d585$ZBIO=="HCO"]+5,d585$TTG[d585$ZBIO=="HCO"], type = "l", lwd = 2,col="#89cd66")
