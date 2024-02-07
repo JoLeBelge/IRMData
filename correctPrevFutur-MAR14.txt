@@ -1,0 +1,112 @@
+
+
+# daily et monthly file computation + multiy analyses pour les périodes futures
+
+MARdirs=("MAR-14-CMC-histo"  "MAR-14-CMC-ssp245"  "MAR-14-CMC-ssp585"  "MAR-14-ERA5" "MAR-14-IPL-histo"  "MAR-14-IPL-ssp245"  "MAR-14-IPL-ssp585"  "MAR-14-MPI-histo"  "MAR-14-MPI-ssp245"  "MAR-14-MPI-ssp585")
+
+for MARdir in ${MARdirs[@]}; do
+
+for period in "2021 2050" "2051 2080" "2081 2100"
+do 
+
+./climatApp --outil 7 --input /media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/$MARdir --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --mode 2 --years $period
+  
+done
+
+done
+
+# multiY pour réanalyse = sur période passée
+
+MARdirs=("MAR-14-CMC-histo" "MAR-14-ERA5" "MAR-14-IPL-histo" "MAR-14-MPI-histo")
+
+for MARdir in ${MARdirs[@]}; do
+
+for period in "1981 2010"
+do 
+
+./climatApp --outil 7 --input /media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/$MARdir --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --mode 2 --years $period
+  
+done
+
+done
+
+# correction avec données historique . 3 objets MAR, chemin ERA5 écrit en dur dans le code ----------------------------------------
+
+basedir="/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa"
+MARmod=("CMC" "MPI" "IPL")
+
+for mod in ${MARmod[@]}; do
+
+for period in "2021 2050" "2051 2080" "2081 2100"
+do 
+./climatApp --outil 8 --input $basedir/MAR-14-$mod-ssp245/ --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --input3 $basedir/MAR-14-$mod-histo/ --years $period
+
+./climatApp --outil 8 --input $basedir/MAR-14-$mod-ssp585/ --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --input3 $basedir/MAR-14-$mod-histo/ --years $period
+
+done
+done
+
+------------------------------------------------------------------
+ensuite c'est chipo à la main pour faire la moyenne par périodes trentenaires futures, mais avant ça on regroupe tout les tableau dans un dossier pour copie sur mon portable
+
+basedir="/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa"
+MARmod=("CMC" "MPI" "IPL")
+
+for mod in ${MARmod[@]}; do
+for ssp in "245" "585"; do
+
+mkdir $basedir/MAR-14-all/$mod-$ssp
+
+cp $basedir/MAR-14-$mod-ssp$ssp/MAR-MultiY/table*cor.csv $basedir/MAR-14-all/$mod-$ssp/
+
+done
+done
+
+
+
+for var in "BHE" "TG" "MBRRS"
+do
+for ssp in "245" "585"; do
+
+for period in "2021-2050" "2051-2080" "2081-2100"
+do
+
+otbcli_BandMathX -il $basedir/MAR-14-MPI-ssp"$ssp"/MAR-MultiY/raster/MARv3.14-MPI-ESM1-2-HR-ssp"$ssp"-"$period""$var"cor.tif $basedir/MAR-14-CMC-ssp"$ssp"/MAR-MultiY/raster/MARv3.14-CMCC-CM2-SR5-ssp"$ssp"-"$period""$var"cor.tif $basedir/MAR-14-IPL-ssp"$ssp"/MAR-MultiY/raster/MARv3.14-IPSL-CM6A-LR-ssp"$ssp"-"$period""$var"cor.tif -out $basedir/MAR-14-all/raster/ssp"$ssp"-"$period""$var"cor.tif -exp '(im1b1+im2b1+im3b1)/3' -ram 4000
+
+gdalwarp -overwrite -tr 100 100 -r cubicspline $basedir/MAR-14-all/raster/ssp"$ssp"-"$period""$var"cor.tif $basedir/MAR-14-all/raster/ssp"$ssp"-"$period""$var"cor100mGSD.tif
+
+done
+done
+done
+
+carte BHE pour donnée historique
+./climatApp --outil 7 --input /media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa/MAR-14-ERA5 --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --mode 2 --years 1991 2020
+gdalwarp -overwrite -tr 100 100 -r cubicspline $basedir/MAR-14-ERA5/MAR-MultiY/raster/MARv3.14-ERA5-histo-1991-2020BHE.tif $basedir/MAR-14-ERA5/MAR-MultiY/raster/MARv3.14-ERA5-histo-1991-2020BHE100mGSD.tif
+
+
+
+// MOYENNE MOBILE - period n'est pas utilisé - il faut changer le code en dur
+basedir="/media/gef/598c5e48-4601-4dbf-ae86-d15388a3dffa"
+MARmod=("CMC" "MPI" "IPL")
+
+for mod in ${MARmod[@]}; do
+
+for period in "2021 2050"
+do 
+./climatApp --outil 8 --input $basedir/MAR-14-$mod-ssp245/ --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --input3 $basedir/MAR-14-$mod-histo/ --years $period
+
+./climatApp --outil 8 --input $basedir/MAR-14-$mod-ssp585/ --input2 "/home/gef/app/climat/doc/grilleIRMGDL.nc" --input3 $basedir/MAR-14-$mod-histo/ --years $period
+
+done
+done
+
+for mod in ${MARmod[@]}; do
+cp $basedir/MAR-14-$mod-ssp245/MAR-MultiY/tableMoyMobileZBIOcor.csv $basedir/MAR-14-all//moyMob/tableMoyMobileZBIOcor-$mod-ssp245.csv
+cp $basedir/MAR-14-$mod-ssp585/MAR-MultiY/tableMoyMobileZBIOcor.csv $basedir/MAR-14-all//moyMob/tableMoyMobileZBIOcor-$mod-ssp585.csv
+done
+
+
+
+
+
+
