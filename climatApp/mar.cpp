@@ -384,10 +384,11 @@ void MAR::moyenneMobileCor(MAR * era5, MAR * GCMhisto){
 
     std::string aTable(mOutMY+"/tableMoyMobileZBIOcor.csv");
     std::string aCommand;
-    int y1ref(1991), y2ref(2020);
+    //int y1ref(1991), y2ref(2020); correction mar 3.13
+    int y1ref(1981), y2ref(2010); //correction mar 3.14
     std::ofstream ofs (aTable, std::ofstream::out);
     ofs << "Decennie;ZBIO;TG\n";
-    std::vector<std::string> vZbio={"NordSM","Ardenne","HA", "HCO", "BMA"};
+    std::vector<std::string> vZbio={"NordSM","Ardenne","HA", "HCO", "BMA","FFC"};
 
     for (int d : {2,3,4,5,6,7,8,9}){
         int y1(2000+d*10+1),y2(2000+(d+1)*10);
@@ -405,7 +406,7 @@ void MAR::moyenneMobileCor(MAR * era5, MAR * GCMhisto){
 
         // sortie pour chaque zbio
         int j(0);
-        for (std::string zbio : {"mask=(ZBIO==6)+(ZBIO==7);","mask=(ZBIO==10)+(ZBIO==1)+(ZBIO==2);","mask=ZBIO==10;","mask=ZBIO==1;","mask=ZBIO==2;"}){
+        for (std::string zbio : {"mask=(ZBIO==6)+(ZBIO==7);","mask=(ZBIO==10)+(ZBIO==1)+(ZBIO==2);","mask=ZBIO==10;","mask=ZBIO==1;","mask=ZBIO==2;","mask=ZBIO==4;"}){
             ofs <<y1<<";"<< vZbio.at(j) << ";";
             aCommand="cdo  -s -W -outputf,%8.6g,80 -fldmean -ifthen -expr,'"+zbio+ "' "+ zbioNc+ " "+nameMultiY(y1,y2,"TGcor") ;
             ofs <<exec(aCommand.c_str()) << "\n";

@@ -1,9 +1,9 @@
-une application pour le traitement de données climatiques.
+une application pour le traitement de données climatiques des observations griddées de l'IRM et des modélisations du climat avec le modèle MAR (Ulg - Xavier Fetweiss).
 
 Concu pour les besoins de la thèse de Arthur Gilles en 2021, l'outil était destiné dans un premier temps à la lecture des données de l'ECAD.
 Par la suite, l'IRM nous ayant transmis les données que nous attendions, l'outil est développé pour la lecture et le traitement des données reçue par l'IRM qui sont dans un format custom, bien entendu.
 
-l'outil à utiliser est donc l'outil numéro 4, car les 3 premiers concernent le traitements des données ECAD et sont donc moins intéressant.
+l'outil à utiliser est donc l'outil numéro 4, car les 3 premiers concernent le traitements des données ECAD et sont donc moins intéressant (à supprimer le jour ou j'ai le temps)
 
 Exemple d'utilisation;
 
